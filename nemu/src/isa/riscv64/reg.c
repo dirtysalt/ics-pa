@@ -9,11 +9,11 @@ void isa_reg_display() {
     int n = sizeof(regs) / sizeof(regs[0]);
 
     word_t value = cpu.pc;
-    printf("%s  %ld  0x%lx\n", "pc", value, value);
+    printf("%s  " FMT_WORD "\n", "pc", value);
 
     for (int i = 0; i < n; i++) {
         word_t value = gpr(i);
-        printf("%s  %ld  0x%lx\n", regs[i], value, value);
+        printf("%s  " FMT_WORD "\n", regs[i], value);
     }
 }
 

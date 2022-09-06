@@ -75,7 +75,7 @@ static int cmd_x(char* args) {
     char* arg1 = strtok(NULL, " ");
     int size = strtol(arg0, NULL, 10);
     vaddr_t offset = strtol(arg1, NULL, 16);
-    printf("scan memory: offset = 0x%lx, size = %d\n", offset, size);
+    printf("scan memory: offset = " FMT_WORD ", size = %d\n", offset, size);
     vaddr_t addr = offset;
     for (int i = 0; i < size; i++) {
         word_t value = vaddr_read(addr + i, 1);
@@ -96,7 +96,7 @@ static int cmd_p(char* args) {
     if (!success) {
         printf("Failed to eval %s\n", args);
     } else {
-        printf("%ld 0x%lx\n", ret, ret);
+        printf(FMT_WORD "\n", ret);
     }
     return 0;
 }

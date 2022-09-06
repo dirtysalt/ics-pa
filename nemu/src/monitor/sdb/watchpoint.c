@@ -81,7 +81,7 @@ void rem_wp(int no) {
 void list_wp() {
     WP* now = head;
     while (now) {
-        printf("no:%d, expr:%s, value:%ld 0x%lx\n", now->NO, now->expr, now->result, now->result);
+        printf("no:%d, expr:%s, value:" FMT_WORD "\n", now->NO, now->expr, now->result);
         now = now->next;
     }
 }
@@ -93,7 +93,8 @@ bool check_wp() {
         bool success = false;
         word_t val = run_expr(now->expr, &success);
         if (val != now->result) {
-            printf("Watchpoint. no:%d, expr:%s, old:%ld, now:%ld\n", now->NO, now->expr, now->result, val);
+            printf("Watchpoint. no:%d, expr:%s, old:" FMT_WORD ", now:" FMT_WORD "\n", now->NO, now->expr, now->result,
+                   val);
             trigger = true;
         }
         now->result = val;
