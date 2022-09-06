@@ -93,7 +93,7 @@ bool check_wp() {
         bool success = false;
         word_t val = run_expr(now->expr, &success);
         if (val != now->result) {
-            printf("Watchpoint. no:%d, expr:%s, old:%ld, now:%ld", now->NO, now->expr, now->result, val);
+            printf("Watchpoint. no:%d, expr:%s, old:%ld, now:%ld\n", now->NO, now->expr, now->result, val);
             trigger = true;
         }
         now->result = val;

@@ -6,7 +6,7 @@ const char* regs[] = {"$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1"
                       "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"};
 
 void isa_reg_display() {
-    int n = sizeof(regs) / sizeof(regs[0]);
+    int n = sizeof(regs) / sizeof(regs[0]);    
     for (int i = 0; i < n; i++) {
         word_t value = gpr(i);
         printf("%s  %d  0x%x\n", regs[i], values, value);

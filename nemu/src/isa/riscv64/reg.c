@@ -7,6 +7,10 @@ const char* regs[] = {"$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1"
 
 void isa_reg_display() {
     int n = sizeof(regs) / sizeof(regs[0]);
+
+    word_t value = cpu.pc;
+    printf("%s  %ld  0x%lx\n", "pc", value, value);
+
     for (int i = 0; i < n; i++) {
         word_t value = gpr(i);
         printf("%s  %ld  0x%lx\n", regs[i], value, value);
@@ -14,6 +18,11 @@ void isa_reg_display() {
 }
 
 word_t isa_reg_str2val(const char* s, bool* success) {
+    if (strcmp(s, "pc") == 0) {
+        *success = true;
+        return cpu.pc;
+    }
+
     int n = sizeof(regs) / sizeof(regs[0]);
     *success = false;
     for (int i = 0; i < n; i++) {
