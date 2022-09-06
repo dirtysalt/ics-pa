@@ -4,7 +4,8 @@
 #include <isa-all-instr.h>
 #include <locale.h>
 
-void check_wp();
+bool check_wp();
+void sdb_mainloop();
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -31,7 +32,16 @@ static void trace_and_difftest(Decode* _this, vaddr_t dnpc) {
         IFDEF(CONFIG_ITRACE, puts(_this->logbuf));
     }
     IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
-    check_wp();
+
+#ifdef CONFIG_WATCHPOINT
+    if (check_wp()) {
+        nemu_state.state = NEMU_STOP;
+        // TODO(yan): will call `cpu_exec` in it, stack grows
+        // or we can quit this mainloop, and let outside `cpu_exec` runs.
+        sdb_mainloop();
+        nemu_state.state = NEMU_RUNNING;
+    }
+#endif
 }
 
 #include <isa-exec.h>

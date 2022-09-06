@@ -86,7 +86,7 @@ void list_wp() {
     }
 }
 
-void check_wp() {
+bool check_wp() {
     WP* now = head;
     bool trigger = false;
     while (now) {
@@ -99,7 +99,5 @@ void check_wp() {
         now->result = val;
         now = now->next;
     }
-    if (trigger) {
-        sdb_mainloop();
-    }
+    return trigger;
 }
