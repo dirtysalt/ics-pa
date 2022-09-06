@@ -99,6 +99,7 @@ static bool make_token(char* e) {
          * of tokens, some extra actions should be performed.
          */
 
+                tokens[nr_token].str[0] = 0;
                 switch (rules[i].token_type) {
                 case '+':
                 case '*':
@@ -133,7 +134,11 @@ static bool make_token(char* e) {
                     break;
                 }
                 case TK_NUM:
-                case TK_REG: {
+                case TK_REG:
+                case TK_AND:
+                case TK_OR:
+                case TK_EQ:
+                case TK_NEQ: {
                     int type = rules[i].token_type;
                     strncpy(tokens[nr_token].str, substr_start, substr_len);
                     *(tokens[nr_token].str + substr_len) = 0;
@@ -163,7 +168,8 @@ void print_tokens(const char* e) {
     int pos = 0;
     for (int i = 0; i < nr_token; i++) {
         Token* t = &(tokens[i]);
-        if (t->type == TK_NUM || t->type == TK_REG) {
+        if (t->type == TK_NUM || t->type == TK_REG || t->type == TK_AND || t->type == TK_OR || t->type == TK_EQ ||
+            t->type == TK_NEQ) {
             pos += sprintf(buf + pos, "%s ", t->str);
         } else if (t->type == TK_NEG) {
             pos += sprintf(buf + pos, "-");
@@ -175,6 +181,13 @@ void print_tokens(const char* e) {
     }
     buf[pos] = 0;
     Log("expr = %s, tokens = %s", e, buf);
+}
+
+static int priority(int t) {
+    if (t == TK_AND || t == TK_OR || t == TK_NEQ || t == TK_EQ) return 0;
+    if (t == '+' || t == '-') return 1;
+    if (t == '*' || t == '/') return 2;
+    return 100;
 }
 
 static word_t eval_expr(int p, int q) {
@@ -227,11 +240,13 @@ static word_t eval_expr(int p, int q) {
     for (int i = p; i <= q; i++) {
         Token* t = tokens + i;
         if (depth == 0) {
-            if (t->type == '+' || t->type == '-') {
-                op = i;
-            } else if (t->type == '*' || t->type == '/') {
-                if (op == -1 || tokens[op].type == '*' || tokens[op].type == '/') {
+            int new = priority(t->type);
+            if (new < 100) {
+                if (op == -1)
                     op = i;
+                else {
+                    int old = priority(tokens[op].type);
+                    if (new <= old) op = i;
                 }
             }
         }
@@ -260,8 +275,21 @@ static word_t eval_expr(int p, int q) {
     case '/':
         res = a / b;
         break;
+    case TK_AND:
+        res = a && b;
+        break;
+    case TK_OR:
+        res = a || b;
+        break;
+    case TK_EQ:
+        res = (a == b);
+        break;
+    case TK_NEQ:
+        res = (a != b);
+        break;
     }
-    Log("token op type = %c, a = %ld, b = %ld, res = %ld", tokens[op].type, a, b, res);
+    Log("token op type = %c(%d, %s), a = %ld, b = %ld, res = %ld", tokens[op].type, tokens[op].type, tokens[op].str, a,
+        b, res);
     return res;
 }
 
@@ -295,6 +323,7 @@ void test_expr_cases() {
             {"4 + (1*2)", 6},
             {"*0x80000000", 0x00000297},
             {"$0", 0},
+            {"4 != 5", 1},
             {NULL, 0}};
 
     for (int i = 0; cases[i].s != NULL; i++) {
