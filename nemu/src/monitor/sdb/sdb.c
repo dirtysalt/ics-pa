@@ -62,6 +62,8 @@ static int cmd_info(char* args) {
     char* arg = strtok(args, " ");
     if (strcmp(arg, "r") == 0) {
         isa_reg_display();
+    } else if (strcmp(arg, "w") == 0) {
+        list_wp();
     } else {
         printf("Unknown subcommand: %s\n", args);
     }
@@ -88,6 +90,28 @@ static int cmd_x(char* args) {
     return 0;
 }
 
+static int cmd_p(char* args) {
+    bool success = false;
+    word_t ret = run_expr(args, &success);
+    if (!success) {
+        printf("Failed to eval %s\n", args);
+    } else {
+        printf("%ld 0x%lx\n", ret, ret);
+    }
+    return 0;
+}
+
+static int cmd_w(char* args) {
+    add_wp(args);
+    return 0;
+}
+
+static int cmd_d(char* args) {
+    int no = strtol(args, NULL, 10);
+    rem_wp(no);
+    return 0;
+}
+
 static struct {
     const char* name;
     const char* description;
@@ -97,6 +121,9 @@ static struct {
         {"c", "Continue the execution of the program", cmd_c},
         {"si", "Single Instruction Execution", cmd_si},
         {"info", "Show Information", cmd_info},
+        {"p", "Print expression", cmd_p},
+        {"d", "Delete watchpoint", cmd_d},
+        {"w", "Add watchpoint", cmd_w},
         {"x", "Scan Memory", cmd_x},
         {"q", "Exit NEMU", cmd_q}
         /* TODO: Add more commands */

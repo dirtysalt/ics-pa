@@ -190,16 +190,17 @@ static int priority(int t) {
     return 100;
 }
 
-static word_t eval_expr(int p, int q) {
+static word_t eval_expr(int p, int q, bool* ok) {
     if (p == q) {
         const char* s = tokens[p].str;
         if (s[0] == '0' && s[1] == 'x') {
             return strtoll(s, NULL, 16);
         } else if (s[0] == '$') {
             bool success = false;
-            word_t res = isa_reg_str2val(s, &success);
+            word_t res = isa_reg_str2val(s + 1, &success);
             if (!success) {
-                printf("Register %s not found\n", s);
+                *ok = false;
+                Log("Register %s not found", s);
             }
             return res;
         } else {
@@ -207,11 +208,11 @@ static word_t eval_expr(int p, int q) {
         }
     }
     if (tokens[p].type == TK_NEG) {
-        word_t res = eval_expr(p + 1, q);
+        word_t res = eval_expr(p + 1, q, ok);
         return -res;
     }
     if (tokens[p].type == TK_DEREF) {
-        word_t res = eval_expr(p + 1, q);
+        word_t res = eval_expr(p + 1, q, ok);
         word_t data = vaddr_read(res, sizeof(word_t));
         return data;
     }
@@ -232,7 +233,7 @@ static word_t eval_expr(int p, int q) {
             }
         }
         if (match) {
-            return eval_expr(p + 1, q - 1);
+            return eval_expr(p + 1, q - 1, ok);
         }
     }
     int depth = 0;
@@ -259,8 +260,8 @@ static word_t eval_expr(int p, int q) {
     if (!(op >= p && op <= q)) {
         panic("eval: op = %d, p = %d, q = %d", op, p, q);
     }
-    word_t a = eval_expr(p, op - 1);
-    word_t b = eval_expr(op + 1, q);
+    word_t a = eval_expr(p, op - 1, ok);
+    word_t b = eval_expr(op + 1, q, ok);
     word_t res = 0;
     switch (tokens[op].type) {
     case '+':
@@ -273,7 +274,11 @@ static word_t eval_expr(int p, int q) {
         res = a * b;
         break;
     case '/':
-        res = a / b;
+        if (b == 0)
+            *ok = false;
+        else {
+            res = a / b;
+        }
         break;
     case TK_AND:
         res = a && b;
@@ -293,17 +298,18 @@ static word_t eval_expr(int p, int q) {
     return res;
 }
 
-word_t expr(char* e, bool* success) {
+word_t run_expr(char* e, bool* success) {
     if (!make_token(e)) {
         *success = false;
         return 0;
     }
+    *success = true;
 
     print_tokens(e);
 
     /* TODO: Insert codes to evaluate the expression. */
     // TODO();
-    word_t ans = eval_expr(0, nr_token - 1);
+    word_t ans = eval_expr(0, nr_token - 1, success);
     return ans;
 }
 
@@ -322,14 +328,14 @@ void test_expr_cases() {
             {"4 * -5", -20},
             {"4 + (1*2)", 6},
             {"*0x80000000", 0x00000297},
-            {"$0", 0},
+            {"$ra", 0},
             {"4 != 5", 1},
             {NULL, 0}};
 
     for (int i = 0; cases[i].s != NULL; i++) {
         bool success = true;
         char* s = cases[i].s;
-        int value = expr(s, &success);
+        int value = run_expr(s, &success);
         int exp = cases[i].exp;
         if (exp != value) {
             panic("eval expr(%s) -> %d, exp = %d", s, value, exp);
