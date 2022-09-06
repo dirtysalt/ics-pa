@@ -3,14 +3,21 @@
 /* We use the POSIX regex functions to process regular expressions.
  * Type 'man regex' for more information about POSIX regex functions.
  */
+#include <memory/vaddr.h>
 #include <regex.h>
 
 enum {
     TK_NOTYPE = 256,
     TK_EQ,
+    TK_NEQ,
+    TK_AND,
+    TK_OR,
 
     /* TODO: Add more token types */
     TK_NUM,
+    TK_NEG,
+    TK_DEREF,
+    TK_REG,
 };
 
 static struct rule {
@@ -22,15 +29,20 @@ static struct rule {
    * Pay attention to the precedence level of different rules.
    */
 
-        {" +", TK_NOTYPE},  // spaces
-        {"\\+", '+'},       // plus
-        {"==", TK_EQ},      // equal
-        {"\\-", '-'},       // sub
-        {"\\*", '*'},       // mul
-        {"\\/", '/'},       // div
-        {"[0-9]+", TK_NUM}, // num
-        {"\\(", '('},       // (
-        {"\\)", ')'}        // )
+        {" +", TK_NOTYPE},          // spaces
+        {"\\+", '+'},               // plus
+        {"==", TK_EQ},              // equal
+        {"!=", TK_NEQ},             // not equal,
+        {"\\&\\&", TK_AND},         // and,
+        {"\\|\\|", TK_OR},          // or
+        {"\\-", '-'},               // sub
+        {"\\*", '*'},               // mul
+        {"\\/", '/'},               // div
+        {"0x[0-9A-Fa-f]+", TK_NUM}, // num
+        {"[0-9]+", TK_NUM},         // num
+        {"\\$[0-9a-z]+", TK_REG},   // reg
+        {"\\(", '('},               // (
+        {"\\)", ')'}                // )
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -89,38 +101,43 @@ static bool make_token(char* e) {
 
                 switch (rules[i].token_type) {
                 case '+':
-                case '-':
                 case '*':
+                case '-':
                 case '/':
                 case '(':
                 case ')': {
-                    tokens[nr_token++].type = rules[i].token_type;
-                    break;
-                }
-                case TK_NUM: {
-                    // to support negative number.
-                    bool neg = false;
-                    if (nr_token >= 2) {
-                        Token* a = &tokens[nr_token - 1];
-                        Token* b = &tokens[nr_token - 2];
-                        if (a->type == '-') {
-                            if (b->type == TK_NUM || b->type == ')') {
+                    int type = rules[i].token_type;
+                    // negative number.
+                    if (type == '-') {
+                        bool neg = true;
+                        if (nr_token > 0) {
+                            int pt = tokens[nr_token - 1].type;
+                            if (pt == ')' || pt == TK_NUM) {
                                 neg = false;
-                            } else {
-                                neg = true;
                             }
                         }
+                        if (neg) type = TK_NEG;
                     }
-                    if (neg) {
-                        nr_token -= 1;
-                        tokens[nr_token].str[0] = '-';
-                        strncpy(tokens[nr_token].str + 1, substr_start, substr_len);
-                        *(tokens[nr_token].str + substr_len + 1) = 0;
-                    } else {
-                        strncpy(tokens[nr_token].str, substr_start, substr_len);
-                        *(tokens[nr_token].str + substr_len) = 0;
+                    if (type == '*') {
+                        bool deref = true;
+                        if (nr_token > 0) {
+                            int pt = tokens[nr_token - 1].type;
+                            if (pt == ')' || pt == TK_NUM) {
+                                deref = false;
+                            }
+                        }
+                        if (deref) type = TK_DEREF;
                     }
-                    tokens[nr_token].type = TK_NUM;
+
+                    tokens[nr_token++].type = type;
+                    break;
+                }
+                case TK_NUM:
+                case TK_REG: {
+                    int type = rules[i].token_type;
+                    strncpy(tokens[nr_token].str, substr_start, substr_len);
+                    *(tokens[nr_token].str + substr_len) = 0;
+                    tokens[nr_token].type = type;
                     nr_token++;
                     break;
                 }
@@ -141,25 +158,51 @@ static bool make_token(char* e) {
     return true;
 }
 
-void print_tokens() {
+void print_tokens(const char* e) {
     char buf[1024];
     int pos = 0;
     for (int i = 0; i < nr_token; i++) {
         Token* t = &(tokens[i]);
-        if (t->type == TK_NUM) {
+        if (t->type == TK_NUM || t->type == TK_REG) {
             pos += sprintf(buf + pos, "%s ", t->str);
+        } else if (t->type == TK_NEG) {
+            pos += sprintf(buf + pos, "-");
+        } else if (t->type == TK_DEREF) {
+            pos += sprintf(buf + pos, "*");
         } else {
             pos += sprintf(buf + pos, "%c ", t->type);
         }
     }
     buf[pos] = 0;
-    Log("tokens = %s", buf);
+    Log("expr = %s, tokens = %s", e, buf);
 }
 
 static word_t eval_expr(int p, int q) {
     if (p == q) {
-        return strtoll(tokens[p].str, NULL, 10);
+        const char* s = tokens[p].str;
+        if (s[0] == '0' && s[1] == 'x') {
+            return strtoll(s, NULL, 16);
+        } else if (s[0] == '$') {
+            bool success = false;
+            word_t res = isa_reg_str2val(s, &success);
+            if (!success) {
+                printf("Register %s not found\n", s);
+            }
+            return res;
+        } else {
+            return strtoll(s, NULL, 10);
+        }
     }
+    if (tokens[p].type == TK_NEG) {
+        word_t res = eval_expr(p + 1, q);
+        return -res;
+    }
+    if (tokens[p].type == TK_DEREF) {
+        word_t res = eval_expr(p + 1, q);
+        word_t data = vaddr_read(res, sizeof(word_t));
+        return data;
+    }
+
     if (tokens[p].type == '(' && tokens[q].type == ')') {
         int depth = 0;
         bool match = true;
@@ -228,7 +271,7 @@ word_t expr(char* e, bool* success) {
         return 0;
     }
 
-    print_tokens();
+    print_tokens(e);
 
     /* TODO: Insert codes to evaluate the expression. */
     // TODO();
@@ -246,9 +289,12 @@ void test_expr_cases() {
              "3+4)+1)-((8)*((7+(10))))+(9))*(4+2)+((3-(3)*9))+(1)*(1)",
              14763},
             {"(1)*(2)+8", 10},
+            {"4 * -(2+3)", -20},
             {"4 * (-5)", -20},
             {"4 * -5", -20},
             {"4 + (1*2)", 6},
+            {"*0x80000000", 0x00000297},
+            {"$0", 0},
             {NULL, 0}};
 
     for (int i = 0; cases[i].s != NULL; i++) {

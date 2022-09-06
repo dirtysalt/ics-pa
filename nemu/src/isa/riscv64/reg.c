@@ -1,16 +1,26 @@
-#include <isa.h>
 #include "local-include/reg.h"
 
-const char *regs[] = {
-  "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
-  "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
-  "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
-  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
-};
+#include <isa.h>
+
+const char* regs[] = {"$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "s0", "s1", "a0",  "a1",  "a2", "a3", "a4", "a5",
+                      "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"};
 
 void isa_reg_display() {
+    int n = sizeof(regs) / sizeof(regs[0]);
+    for (int i = 0; i < n; i++) {
+        word_t value = gpr(i);
+        printf("%s  %ld  0x%lx\n", regs[i], value, value);
+    }
 }
 
-word_t isa_reg_str2val(const char *s, bool *success) {
-  return 0;
+word_t isa_reg_str2val(const char* s, bool* success) {
+    int n = sizeof(regs) / sizeof(regs[0]);
+    *success = false;
+    for (int i = 0; i < n; i++) {
+        if (strcmp(regs[i], s) == 0) {
+            *success = true;
+            return gpr(i);
+        }
+    }
+    return 0;
 }
