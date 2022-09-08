@@ -16,30 +16,28 @@ static inline def_rtl(mv, rtlreg_t* dest, const rtlreg_t* src1) {
 }
 
 static inline def_rtl(not, rtlreg_t* dest, const rtlreg_t* src1) {
-    rtl_li(s, dest, ~(*src1));
+    rtl_xori(s, ddest, src1, ~(word_t)1);
 }
 
 static inline def_rtl(neg, rtlreg_t* dest, const rtlreg_t* src1) {
-    rtl_li(s, dest, -(*src1));
+    rtl_sub(s, ddest, rz, src1);
 }
 
 static inline def_rtl(sext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
     // dest <- signext(src1[(width * 8 - 1) .. 0])
-    if ((width * 8) == sizeof(*src1)) {
-        rtl_li(s, dest, *src1);
-    } else {
-        rtl_li(s, dest, SIGNEX(*src1, width * 8));
-    }
+    rtl_zext(s, ddest, src1, width);
+    // make it sign extended.
+    rtl_srai(s, ddest, ddest, 0);
 }
 
 static inline def_rtl(zext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
     // dest <- zeroext(src1[(width * 8 - 1) .. 0])
-    if ((width * 8) == sizeof(*src1)) {
-        rtl_li(s, dest, *src1);
-    } else {
-        word_t mask = ((uint64_t)1 << (8 * width)) - 1;
-        rtl_li(s, dest, *src1 & mask);
-    }
+    // make mask (width << 3) - 1
+    rtl_li(s, ddest, imm);
+    rtl_slli(s, ddest, ddest, 3);
+    rtl_subi(s, ddest, ddest, 1);
+    // and.
+    rtl_and(s, ddest, src1, ddest);
 }
 
 static inline def_rtl(msb, rtlreg_t* dest, const rtlreg_t* src1, int width) {
