@@ -17,7 +17,8 @@ def_EHelper(jal) {
 
 def_EHelper(jalr) {
     rtl_li(s, t0, s->pc + 4);
-    // TODO(yan):
     rtl_addi(s, s0, id_src1->preg, SEXT(id_src2->imm, 12));
-    rtl_jr(s, t0);
+    rtl_andi(s, s1, s0, ~(sword_t)1);
+    rtl_jr(s, s1);
+    rtl_mv(s, ddest, t0);
 }
