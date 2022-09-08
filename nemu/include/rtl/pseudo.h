@@ -23,21 +23,21 @@ static inline def_rtl(neg, rtlreg_t* dest, const rtlreg_t* src1) {
     rtl_sub(s, ddest, rz, src1);
 }
 
+static inline def_rtl(zext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
+    // dest <- zeroext(src1[(width * 8 - 1) .. 0])
+    // make mask (width << 3) - 1
+    rtl_li(s, ddest, width);
+    rtl_slli(s, ddest, ddest, 3);
+    rtl_subi(s, ddest, ddest, 1);
+    // and.
+    rtl_and(s, ddest, src1, ddest);
+}
+
 static inline def_rtl(sext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
     // dest <- signext(src1[(width * 8 - 1) .. 0])
     rtl_zext(s, ddest, src1, width);
     // make it sign extended.
     rtl_srai(s, ddest, ddest, 0);
-}
-
-static inline def_rtl(zext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
-    // dest <- zeroext(src1[(width * 8 - 1) .. 0])
-    // make mask (width << 3) - 1
-    rtl_li(s, ddest, imm);
-    rtl_slli(s, ddest, ddest, 3);
-    rtl_subi(s, ddest, ddest, 1);
-    // and.
-    rtl_and(s, ddest, src1, ddest);
 }
 
 static inline def_rtl(msb, rtlreg_t* dest, const rtlreg_t* src1, int width) {
