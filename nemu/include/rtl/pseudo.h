@@ -47,7 +47,7 @@ static inline def_rtl(sext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
     width = width * 8;
     word_t mask = ((word_t)1 << width) - 1;
     word_t value = *src1 & mask;
-    // sign
+    // sign. branch-less ?
     if ((value >> (width - 1)) & 0x1) {
         value = value | ~(mask >> 1);
     }
