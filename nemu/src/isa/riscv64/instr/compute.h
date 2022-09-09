@@ -51,9 +51,15 @@ def_EHelper(sltiu) {
     // Log("pc = " FMT_WORD ", a = " FMT_WORD ", b = " FMT_WORD ", result = " FMT_WORD, s->pc, *id_src1->preg, val, *s0);
     rtl_mv(s, ddest, s0);
 }
+def_EHelper(sltu) {
+    rtl_setrelop(s, RELOP_LTU, ddest, id_src1->preg, id_src2->preg);
+}
 
 def_EHelper(slli) {
-    rtl_slli(s, ddest, id_src1->preg, id_src2->imm);
+    rtl_slli(s, ddest, id_src1->preg, id_src2->imm & 0x3f);
+}
+def_EHelper(srai) {
+    rtl_srai(s, ddest, id_src1->preg, id_src2->imm & 0x3f);
 }
 
 // branchless version. all operations are in RTL.
@@ -79,7 +85,7 @@ def_EHelper(slli) {
     }
 #endif
 
-#define BRANCH_TEMPLATE(name, op)                              \
+#define BRANCH_IMM_TEMPLATE(name, op)                          \
     def_EHelper(name) {                                        \
         word_t imm = (id_src2->imm);                           \
         word_t val = BRANCH_SHUFFLE(imm);                      \
@@ -88,12 +94,24 @@ def_EHelper(slli) {
         if (*s0 == 1) rtl_j(s, s->pc + ext);                   \
     }
 
-BRANCH_TEMPLATE(beq, RELOP_EQ)
-BRANCH_TEMPLATE(bne, RELOP_NE)
+BRANCH_IMM_TEMPLATE(beq, RELOP_EQ)
+BRANCH_IMM_TEMPLATE(bne, RELOP_NE)
 
 def_EHelper(addiw) {
     rtl_addiw(s, ddest, id_src1->preg, id_src2->imm);
 }
 def_EHelper(addw) {
     rtl_addw(s, ddest, id_src1->preg, id_src2->preg);
+}
+def_EHelper(sllw) {
+    rtl_sllw(s, ddest, id_src1->preg, id_src2->preg);
+}
+def_EHelper(andi) {
+    rtl_andi(s, ddest, id_src1->preg, id_src2->imm);
+}
+def_EHelper(xori) {
+    rtl_xori(s, ddest, id_src1->preg, SEXT(id_src2->imm, 12));
+}
+def_EHelper(and) {
+    rtl_and(s, ddest, id_src1->preg, id_src2->preg);
 }
