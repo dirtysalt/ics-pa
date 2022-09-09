@@ -2,10 +2,6 @@ def_EHelper(auipc) {
     rtl_li(s, ddest, id_src1->imm + s->pc);
 }
 
-def_EHelper(addi) {
-    rtl_addi(s, ddest, id_src1->preg, id_src2->imm);
-}
-
 // offset[20|10:1|11|19:12]
 // offset[19|9:0|10|18:11]
 #define JAL_SHUFFLE(imm) \
@@ -35,31 +31,6 @@ def_EHelper(jalr) {
     rtl_andi(s, s0, s0, ~(sword_t)1);
     rtl_jr(s, s0);
     rtl_mv(s, ddest, s1);
-}
-
-def_EHelper(add) {
-    rtl_add(s, ddest, id_src1->preg, id_src2->preg);
-}
-
-def_EHelper(sub) {
-    rtl_sub(s, ddest, id_src1->preg, id_src2->preg);
-}
-
-def_EHelper(sltiu) {
-    word_t val = SEXT(id_src2->imm, 12);
-    rtl_setrelopi(s, RELOP_LTU, s0, id_src1->preg, val);
-    // Log("pc = " FMT_WORD ", a = " FMT_WORD ", b = " FMT_WORD ", result = " FMT_WORD, s->pc, *id_src1->preg, val, *s0);
-    rtl_mv(s, ddest, s0);
-}
-def_EHelper(sltu) {
-    rtl_setrelop(s, RELOP_LTU, ddest, id_src1->preg, id_src2->preg);
-}
-
-def_EHelper(slli) {
-    rtl_slli(s, ddest, id_src1->preg, id_src2->imm & 0x3f);
-}
-def_EHelper(srai) {
-    rtl_srai(s, ddest, id_src1->preg, id_src2->imm & 0x3f);
 }
 
 // branchless version. all operations are in RTL.
@@ -97,21 +68,28 @@ def_EHelper(srai) {
 BRANCH_IMM_TEMPLATE(beq, RELOP_EQ)
 BRANCH_IMM_TEMPLATE(bne, RELOP_NE)
 
-def_EHelper(addiw) {
-    rtl_addiw(s, ddest, id_src1->preg, id_src2->imm);
+def_EHelper(sltiu) {
+    word_t val = SEXT(id_src2->imm, 12);
+    rtl_setrelopi(s, RELOP_LTU, s0, id_src1->preg, val);
+    // Log("pc = " FMT_WORD ", a = " FMT_WORD ", b = " FMT_WORD ", result = " FMT_WORD, s->pc, *id_src1->preg, val, *s0);
+    rtl_mv(s, ddest, s0);
 }
-def_EHelper(addw) {
-    rtl_addw(s, ddest, id_src1->preg, id_src2->preg);
+def_EHelper(sltu) {
+    rtl_setrelop(s, RELOP_LTU, ddest, id_src1->preg, id_src2->preg);
 }
-def_EHelper(sllw) {
-    rtl_sllw(s, ddest, id_src1->preg, id_src2->preg);
-}
-def_EHelper(andi) {
-    rtl_andi(s, ddest, id_src1->preg, id_src2->imm);
-}
-def_EHelper(xori) {
-    rtl_xori(s, ddest, id_src1->preg, SEXT(id_src2->imm, 12));
-}
-def_EHelper(and) {
-    rtl_and(s, ddest, id_src1->preg, id_src2->preg);
-}
+
+#define DIRECT(name, ...) \
+    def_EHelper(name) { rtl_##name(s, __VA_ARGS__); }
+
+DIRECT(and, ddest, id_src1->preg, id_src2->preg)
+DIRECT(or, ddest, id_src1->preg, id_src2->preg)
+DIRECT(add, ddest, id_src1->preg, id_src2->preg)
+DIRECT(addw, ddest, id_src1->preg, id_src2->preg)
+DIRECT(sllw, ddest, id_src1->preg, id_src2->preg)
+DIRECT(sub, ddest, id_src1->preg, id_src2->preg)
+DIRECT(addi, ddest, id_src1->preg, id_src2->imm)
+DIRECT(slli, ddest, id_src1->preg, id_src2->imm & 0x3f)
+DIRECT(srai, ddest, id_src1->preg, id_src2->imm & 0x3f)
+DIRECT(xori, ddest, id_src1->preg, SEXT(id_src2->imm, 12))
+DIRECT(andi, ddest, id_src1->preg, id_src2->imm)
+DIRECT(addiw, ddest, id_src1->preg, id_src2->imm)
