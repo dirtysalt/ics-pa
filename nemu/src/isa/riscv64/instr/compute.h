@@ -38,7 +38,6 @@ def_EHelper(jalr) {
 }
 
 def_EHelper(add) {
-    //  Log("pc = " FMT_WORD, s->pc);
     rtl_add(s, ddest, id_src1->preg, id_src2->preg);
 }
 
@@ -47,23 +46,27 @@ def_EHelper(sub) {
 }
 
 def_EHelper(sltiu) {
-    rtl_setrelopi(s, RELOP_LT, ddest, id_src1->preg, SEXT(id_src2->imm, 12));
+    word_t val = SEXT(id_src2->imm, 12);
+    rtl_setrelopi(s, RELOP_LTU, s0, id_src1->preg, val);
+    Log("pc = " FMT_WORD ", a = " FMT_WORD ", b = " FMT_WORD ", result = " FMT_WORD, s->pc, *id_src1->preg, val, *s0);
+    rtl_mv(s, ddest, s0);
 }
 
-#define BRANCH_LOG(name, op)                                                                                       \
-    Log("pc = " FMT_WORD ", name = " #name ", op = " #op ", imm = " FMT_WORD ", val = " FMT_WORD ", a = " FMT_WORD \
-        ", b = " FMT_WORD ", result = " FMT_WORD,                                                                  \
-        s->pc, imm, val, *id_src1->preg, *id_dest->preg, *s0);
+#define BRANCH_LOG(name, op)                                                                            \
+    Log("pc = " FMT_WORD ", snpc = " FMT_WORD ", imm = " FMT_WORD ", val = " FMT_WORD ", a = " FMT_WORD \
+        ", b = " FMT_WORD ", result = " FMT_WORD,                                                       \
+        s->pc, s->snpc, imm, ext, *id_src1->preg, *id_dest->preg, *s0);
 
 #define BRANCH_TEMPLATE(name, op)                              \
     def_EHelper(name) {                                        \
         word_t imm = (id_src2->imm);                           \
         word_t val = BRANCH_SHUFFLE(imm);                      \
+        word_t ext = SEXT(val, 12);                            \
         rtl_setrelop(s, op, s0, id_src1->preg, id_dest->preg); \
         rtl_sub(s, s0, rz, s0);                                \
+        rtl_andi(s, s0, s0, ext);                              \
         BRANCH_LOG(name, op);                                  \
-        rtl_andi(s, s0, s0, val);                              \
-        rtl_addi(s, s0, s0, s->pc);                            \
+        rtl_addi(s, s0, s0, s->snpc);                          \
         rtl_jr(s, s0);                                         \
     }
 
