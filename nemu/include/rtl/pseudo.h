@@ -27,8 +27,8 @@ static inline def_rtl(zext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
     // dest <- zeroext(src1[(width * 8 - 1) .. 0])
     // make mask (width << 3) - 1
     rtl_li(s, t0, width);
-    rtl_slli(s, t0, dest, 3);
-    rtl_subi(s, t0, dest, 1);
+    rtl_slli(s, t0, t0, 3);
+    rtl_subi(s, t0, t0, 1);
     // and.
     rtl_and(s, dest, src1, t0);
 }

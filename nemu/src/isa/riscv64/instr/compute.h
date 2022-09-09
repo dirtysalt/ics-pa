@@ -48,10 +48,16 @@ def_EHelper(sub) {
 def_EHelper(sltiu) {
     word_t val = SEXT(id_src2->imm, 12);
     rtl_setrelopi(s, RELOP_LTU, s0, id_src1->preg, val);
-    Log("pc = " FMT_WORD ", a = " FMT_WORD ", b = " FMT_WORD ", result = " FMT_WORD, s->pc, *id_src1->preg, val, *s0);
+    // Log("pc = " FMT_WORD ", a = " FMT_WORD ", b = " FMT_WORD ", result = " FMT_WORD, s->pc, *id_src1->preg, val, *s0);
     rtl_mv(s, ddest, s0);
 }
 
+def_EHelper(slli) {
+    rtl_slli(s, ddest, id_src1->preg, id_src2->imm);
+}
+
+// branchless version. all operations are in RTL.
+#if 0
 #define BRANCH_LOG(name, op)                                                                            \
     Log("pc = " FMT_WORD ", snpc = " FMT_WORD ", imm = " FMT_WORD ", val = " FMT_WORD ", a = " FMT_WORD \
         ", b = " FMT_WORD ", dnpc = " FMT_WORD,                                                         \
@@ -63,7 +69,7 @@ def_EHelper(sltiu) {
         word_t val = BRANCH_SHUFFLE(imm);                      \
         word_t ext = SEXT(val << 1, 13);                       \
         rtl_setrelop(s, op, s0, id_src1->preg, id_dest->preg); \
-        rtl_sub(s, s0, rz, s0); /* 0xfffff is 1*/              \
+        rtl_sub(s, s0, rz, s0); /* 0xfffff is 1 */             \
         rtl_andi(s, s1, s0, s->pc + ext);                      \
         rtl_not(s, s0, s0); /* 0x0 is 0 */                     \
         rtl_andi(s, s2, s0, s->snpc);                          \
@@ -71,6 +77,23 @@ def_EHelper(sltiu) {
         BRANCH_LOG(name, op);                                  \
         rtl_jr(s, s0);                                         \
     }
+#endif
+
+#define BRANCH_TEMPLATE(name, op)                              \
+    def_EHelper(name) {                                        \
+        word_t imm = (id_src2->imm);                           \
+        word_t val = BRANCH_SHUFFLE(imm);                      \
+        word_t ext = SEXT(val << 1, 13);                       \
+        rtl_setrelop(s, op, s0, id_src1->preg, id_dest->preg); \
+        if (*s0 == 1) rtl_j(s, s->pc + ext);                   \
+    }
 
 BRANCH_TEMPLATE(beq, RELOP_EQ)
 BRANCH_TEMPLATE(bne, RELOP_NE)
+
+def_EHelper(addiw) {
+    rtl_addiw(s, ddest, id_src1->preg, id_src2->imm);
+}
+def_EHelper(addw) {
+    rtl_addw(s, ddest, id_src1->preg, id_src2->preg);
+}
