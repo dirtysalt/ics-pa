@@ -87,6 +87,20 @@ DIRECT(sub, ddest, id_src1->preg, id_src2->preg)
 DIRECT(addi, ddest, id_src1->preg, id_src2->imm)
 DIRECT(slli, ddest, id_src1->preg, id_src2->imm & 0x3f)
 DIRECT(srai, ddest, id_src1->preg, id_src2->imm & 0x3f)
+DIRECT(srli, ddest, id_src1->preg, id_src2->imm & 0x3f)
 DIRECT(xori, ddest, id_src1->preg, id_src2->imm)
 DIRECT(andi, ddest, id_src1->preg, id_src2->imm)
 DIRECT(addiw, ddest, id_src1->preg, id_src2->imm)
+DIRECT(sraiw, ddest, dsrc1, id_src2->imm)
+DIRECT(mulw, ddest, dsrc1, dsrc2)
+DIRECT(divw, ddest, dsrc1, dsrc2)
+
+def_EHelper(mul) {
+    sword_t a = (sword_t)(*dsrc1);
+    sword_t b = (sword_t)(*dsrc2);
+    *ddest = (word_t)(a * b);
+}
+
+def_EHelper(div) {
+    rtl_divs_q(s, ddest, dsrc1, dsrc2);
+}
