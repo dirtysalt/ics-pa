@@ -19,5 +19,5 @@ def_EHelper(sb) {
 }
 
 def_EHelper(lbu) {
-    rtl_lms(s, ddest, dsrc1, SEXT(id_src2->imm, , 1);
+    rtl_lms(s, ddest, dsrc1, id_src2->imm, 1);
 }

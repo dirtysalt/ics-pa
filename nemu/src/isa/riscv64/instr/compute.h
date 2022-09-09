@@ -27,7 +27,7 @@ def_EHelper(jal) {
 
 def_EHelper(jalr) {
     rtl_li(s, s1, s->pc + 4);
-    rtl_addi(s, s0, id_src1->preg, SEXT(id_src2->imm, 12));
+    rtl_addi(s, s0, id_src1->preg, id_src2->imm);
     rtl_andi(s, s0, s0, ~(sword_t)1);
     rtl_jr(s, s0);
     rtl_mv(s, ddest, s1);
@@ -69,10 +69,7 @@ BRANCH_IMM_TEMPLATE(beq, RELOP_EQ)
 BRANCH_IMM_TEMPLATE(bne, RELOP_NE)
 
 def_EHelper(sltiu) {
-    word_t val = SEXT(id_src2->imm, 12);
-    rtl_setrelopi(s, RELOP_LTU, s0, id_src1->preg, val);
-    // Log("pc = " FMT_WORD ", a = " FMT_WORD ", b = " FMT_WORD ", result = " FMT_WORD, s->pc, *id_src1->preg, val, *s0);
-    rtl_mv(s, ddest, s0);
+    rtl_setrelopi(s, RELOP_LTU, ddest, id_src1->preg, id_src2->imm);
 }
 def_EHelper(sltu) {
     rtl_setrelop(s, RELOP_LTU, ddest, id_src1->preg, id_src2->preg);
@@ -90,6 +87,6 @@ DIRECT(sub, ddest, id_src1->preg, id_src2->preg)
 DIRECT(addi, ddest, id_src1->preg, id_src2->imm)
 DIRECT(slli, ddest, id_src1->preg, id_src2->imm & 0x3f)
 DIRECT(srai, ddest, id_src1->preg, id_src2->imm & 0x3f)
-DIRECT(xori, ddest, id_src1->preg, SEXT(id_src2->imm, 12))
+DIRECT(xori, ddest, id_src1->preg, id_src2->imm)
 DIRECT(andi, ddest, id_src1->preg, id_src2->imm)
 DIRECT(addiw, ddest, id_src1->preg, id_src2->imm)
