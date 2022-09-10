@@ -26,32 +26,19 @@ static inline def_rtl(neg, rtlreg_t* dest, const rtlreg_t* src1) {
 static inline def_rtl(zext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
     // dest <- zeroext(src1[(width * 8 - 1) .. 0])
 
-#if 0
-    // make mask (width << 3) - 1
-    rtl_li(s, t0, width);
-    rtl_slli(s, t0, t0, 3);
-    rtl_subi(s, t0, t0, 1);
-    // and.
-    rtl_and(s, dest, src1, t0);
-#endif
-
-    width = width * 8;
-    word_t mask = ((word_t)1 << width) - 1;
-    word_t value = *src1 & mask;
-    *dest = value;
+    // (src1 << shift) >> shift
+    int shift = sizeof(word_t) - width * 8;
+    rtl_slli(s, t0, src1, shift);
+    rtl_srli(s, dest, t0, shift);
 }
 
 static inline def_rtl(sext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
     // dest <- signext(src1[(width * 8 - 1) .. 0])
 
-    width = width * 8;
-    word_t mask = ((word_t)1 << width) - 1;
-    word_t value = *src1 & mask;
-    // sign. branch-less ?
-    if ((value >> (width - 1)) & 0x1) {
-        value = value | ~(mask >> 1);
-    }
-    *dest = value;
+    // (src1 << shift) >>> shift;
+    int shift = sizeof(word_t) - width * 8;
+    rtl_slli(s, t0, src1, shift);
+    rtl_srai(s, dest, t0, shift);
 }
 
 static inline def_rtl(msb, rtlreg_t* dest, const rtlreg_t* src1, int width) {

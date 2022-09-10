@@ -40,7 +40,7 @@ def_EHelper(jalr) {
         ", b = " FMT_WORD ", dnpc = " FMT_WORD,                                                         \
         s->pc, s->snpc, imm, ext, *id_src1->preg, *id_dest->preg, *s0);
 
-#define BRANCH_IMM_TEMPLATE(name, op)                              \
+#define BRANCH_IMM_TEMPLATE(name, op)                          \
     def_EHelper(name) {                                        \
         word_t imm = (id_src2->imm);                           \
         word_t val = BRANCH_SHUFFLE(imm);                      \
