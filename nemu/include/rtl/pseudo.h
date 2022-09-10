@@ -27,7 +27,7 @@ static inline def_rtl(zext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
     // dest <- zeroext(src1[(width * 8 - 1) .. 0])
 
     // (src1 << shift) >> shift
-    int shift = sizeof(word_t) - width * 8;
+    int shift = (sizeof(word_t) - width) * 8;
     rtl_slli(s, t0, src1, shift);
     rtl_srli(s, dest, t0, shift);
 }
@@ -36,7 +36,7 @@ static inline def_rtl(sext, rtlreg_t* dest, const rtlreg_t* src1, int width) {
     // dest <- signext(src1[(width * 8 - 1) .. 0])
 
     // (src1 << shift) >>> shift;
-    int shift = sizeof(word_t) - width * 8;
+    int shift = (sizeof(word_t) - width) * 8;
     rtl_slli(s, t0, src1, shift);
     rtl_srai(s, dest, t0, shift);
 }
