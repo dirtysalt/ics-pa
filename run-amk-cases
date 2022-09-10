@@ -1,4 +1,3 @@
 #!/bin/bash
 cd /home/dirlt/repo/ics-pa/am-kernels/tests/cpu-tests
-cases="dummy add-longlong add bit div fact fib"
-make ARCH=$ISA-nemu ALL="$cases" run
+make ARCH=$ISA-nemu run

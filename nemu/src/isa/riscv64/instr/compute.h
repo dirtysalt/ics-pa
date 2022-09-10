@@ -33,6 +33,10 @@ def_EHelper(jalr) {
     rtl_mv(s, ddest, s1);
 }
 
+def_EHelper(lui) {
+    rtl_li(s, ddest, id_src1->imm);
+}
+
 // branchless version. all operations are in RTL.
 #if 0
 #define BRANCH_LOG(name, op)                                                                            \
@@ -68,12 +72,22 @@ def_EHelper(jalr) {
 
 BRANCH_IMM_TEMPLATE(beq, RELOP_EQ)
 BRANCH_IMM_TEMPLATE(bne, RELOP_NE)
+BRANCH_IMM_TEMPLATE(bge, RELOP_GE)
+BRANCH_IMM_TEMPLATE(bgeu, RELOP_GEU)
+BRANCH_IMM_TEMPLATE(bltu, RELOP_LTU)
+BRANCH_IMM_TEMPLATE(blt, RELOP_LT)
 
 def_EHelper(sltiu) {
     rtl_setrelopi(s, RELOP_LTU, ddest, id_src1->preg, id_src2->imm);
 }
+def_EHelper(slti) {
+    rtl_setrelopi(s, RELOP_LT, ddest, id_src1->preg, id_src2->imm);
+}
 def_EHelper(sltu) {
     rtl_setrelop(s, RELOP_LTU, ddest, id_src1->preg, id_src2->preg);
+}
+def_EHelper(slt) {
+    rtl_setrelop(s, RELOP_LT, ddest, id_src1->preg, id_src2->preg);
 }
 
 #define DIRECT(name, ...) \
@@ -83,7 +97,10 @@ DIRECT(and, ddest, id_src1->preg, id_src2->preg)
 DIRECT(or, ddest, id_src1->preg, id_src2->preg)
 DIRECT(add, ddest, id_src1->preg, id_src2->preg)
 DIRECT(addw, ddest, id_src1->preg, id_src2->preg)
+DIRECT(subw, ddest, id_src1->preg, id_src2->preg)
 DIRECT(sllw, ddest, id_src1->preg, id_src2->preg)
+DIRECT(srlw, ddest, id_src1->preg, id_src2->preg)
+DIRECT(sraw, ddest, id_src1->preg, id_src2->preg)
 DIRECT(sub, ddest, id_src1->preg, id_src2->preg)
 DIRECT(addi, ddest, id_src1->preg, id_src2->imm)
 DIRECT(slli, ddest, id_src1->preg, id_src2->imm & 0x3f)
@@ -93,8 +110,13 @@ DIRECT(xori, ddest, id_src1->preg, id_src2->imm)
 DIRECT(andi, ddest, id_src1->preg, id_src2->imm)
 DIRECT(addiw, ddest, id_src1->preg, id_src2->imm)
 DIRECT(sraiw, ddest, dsrc1, id_src2->imm)
+DIRECT(slliw, ddest, dsrc1, id_src2->imm)
+DIRECT(srliw, ddest, dsrc1, id_src2->imm)
 DIRECT(mulw, ddest, dsrc1, dsrc2)
 DIRECT(divw, ddest, dsrc1, dsrc2)
+DIRECT(divuw, ddest, dsrc1, dsrc2)
+DIRECT(remw, ddest, dsrc1, dsrc2)
+DIRECT(remuw, ddest, dsrc1, dsrc2)
 
 def_EHelper(mul) {
     sword_t a = (sword_t)(*dsrc1);
