@@ -32,7 +32,7 @@ typedef struct FuncEntry {
     const char* name;
 } FuncEntry;
 
-void read_func_entries_from_elf(const char* fname);
+void read_func_entries(const char* elf_file);
 FuncEntry* list_func_entries(int* size);
 
 // ----------- timer -----------

@@ -12,7 +12,7 @@ int func_trace_number = 0;
 void init_ftrace(const char* elf_file) {
     Log("init ftrace with elf file: %s", elf_file);
     func_trace_number = 0;
-    read_func_entries_from_elf(elf_file);
+    read_func_entries(elf_file);
 }
 
 FuncTraceEvent* new_ftrace_event() {

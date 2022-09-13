@@ -1,5 +1,7 @@
-all:test.exe
-test.exe:test.c
-	gcc test.c -o test.exe -O0 -g
+all:test_elf.exe
+
+%.exe:%.c
+	gcc $< -o $@ -O0 -g
+
 clean:
-	rm test.exe
+	rm test_elf.exe

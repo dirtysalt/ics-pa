@@ -12,7 +12,7 @@ static FuncEntry func_entries[256];
 static int func_entry_number = 0;
 static char string_table[102400];
 
-void read_func_entries_from_elf(const char* fname) {
+void read_func_entries(const char* fname) {
     FILE* fp = fopen(fname, "r");
     Elf64_Ehdr header;
     fread(&header, sizeof(header), 1, fp);
