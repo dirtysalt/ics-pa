@@ -26,6 +26,15 @@ typedef struct FuncTraceEvent {
 void init_ftrace();
 FuncTraceEvent* new_ftrace_event();
 
+typedef struct FuncEntry {
+    word_t addr;
+    word_t size;
+    const char* name;
+} FuncEntry;
+
+void parse_func_entries_in_elf(const char* fname);
+FuncEntry* list_func_entries(int* size);
+
 // ----------- timer -----------
 
 uint64_t get_time();

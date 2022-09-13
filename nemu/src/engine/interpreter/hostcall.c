@@ -6,12 +6,13 @@
 uint32_t pio_read(ioaddr_t addr, int len);
 void pio_write(ioaddr_t addr, int len, uint32_t data);
 
-FuncTraceEvent func_trace_events[1024];
+FuncTraceEvent func_trace_events[10240];
 int func_trace_number = 0;
 
 void init_ftrace(const char* elf_file) {
     Log("init ftrace with elf file: %s", elf_file);
     func_trace_number = 0;
+    parse_func_entries_in_elf(elf_file);
 }
 
 FuncTraceEvent* new_ftrace_event() {
@@ -20,30 +21,58 @@ FuncTraceEvent* new_ftrace_event() {
 }
 
 static void dump_ftrace() {
-    return;
+    int size = 0;
+    FuncEntry* entries = list_func_entries(&size);
+
     int depth = 0;
     for (int i = 0; i < func_trace_number; i++) {
         FuncTraceEvent* event = &func_trace_events[i];
         printf(FMT_WORD ":", event->now_pc);
-        for (int j = 0; j < 2 * depth; j++) {
+        for (int j = 0; j < depth; j++) {
             putchar(' ');
         }
+
+        int type = event->type;
+        const char* name = "???";
+
+        if (type == FTRACE_JMP) {
+            for (int j = 0; j < size; j++) {
+                FuncEntry* entry = entries + j;
+                if (entry->addr == event->jmp_pc) {
+                    type = FTRACE_CALL;
+                    name = entry->name;
+                    break;
+                }
+            }
+        }
+
+        if (type == FTRACE_JMP) {
+            for (int j = 0; j < size; j++) {
+                FuncEntry* entry = entries + j;
+                if (event->now_pc >= entry->addr && event->now_pc < entry->addr + entry->size) {
+                    name = entry->name;
+                    type = FTRACE_RET;
+                    break;
+                }
+            }
+        }
+
         // TODO(yan): parse elf file.
         // it's hard to tell if a jmp is call/ret.
         // but we can tell from address.
         // if address is the start of function address, then it's call
         // otherwise it's return.
-        if (event->type == FTRACE_CALL) {
+        if (type == FTRACE_CALL) {
             printf("call ");
             depth += 1;
-        } else if (event->type == FTRACE_RET) {
+        } else if (type == FTRACE_RET) {            
             printf("ret ");
             depth -= 1;
-        } else if (event->type == FTRACE_JMP) {
+        } else if (type == FTRACE_JMP) {
             printf("jmp ");
         }
 
-        printf("[" FMT_WORD "]\n", event->jmp_pc);
+        printf("[ %s @ " FMT_WORD "]\n", name, event->jmp_pc);
     }
 }
 
