@@ -12,12 +12,18 @@ int func_trace_number = 0;
 void init_ftrace(const char* elf_file) {
     Log("init ftrace with elf file: %s", elf_file);
     func_trace_number = 0;
-    parse_func_entries_in_elf(elf_file);
+    read_func_entries_from_elf(elf_file);
 }
 
 FuncTraceEvent* new_ftrace_event() {
     func_trace_number += 1;
     return &func_trace_events[func_trace_number - 1];
+}
+
+static void inline print_indent(int depth) {
+    for (int j = 0; j < 2 * depth; j++) {
+        putchar(' ');
+    }
 }
 
 static void dump_ftrace() {
@@ -28,9 +34,6 @@ static void dump_ftrace() {
     for (int i = 0; i < func_trace_number; i++) {
         FuncTraceEvent* event = &func_trace_events[i];
         printf(FMT_WORD ":", event->now_pc);
-        for (int j = 0; j < depth; j++) {
-            putchar(' ');
-        }
 
         int type = event->type;
         const char* name = "???";
@@ -63,12 +66,15 @@ static void dump_ftrace() {
         // if address is the start of function address, then it's call
         // otherwise it's return.
         if (type == FTRACE_CALL) {
-            printf("call ");
+            print_indent(depth);
             depth += 1;
-        } else if (type == FTRACE_RET) {            
-            printf("ret ");
+            printf("call ");
+        } else if (type == FTRACE_RET) {
             depth -= 1;
+            print_indent(depth);
+            printf("ret ");
         } else if (type == FTRACE_JMP) {
+            print_indent(depth);
             printf("jmp ");
         }
 
