@@ -1,3 +1,5 @@
+#include <utils.h>
+
 def_EHelper(auipc) {
     rtl_li(s, ddest, id_src1->imm + s->pc);
 }
@@ -23,14 +25,24 @@ def_EHelper(jal) {
     // printf("val = %ld, ext = %ld\n", val << 1, result);
 
     rtl_j(s, s->pc + ext);
+
+    FuncTraceEvent* event = new_ftrace_event();
+    event->type = FTRACE_JMP;
+    event->now_pc = s->pc;
+    event->jmp_pc = s->dnpc;
 }
 
-def_EHelper(jalr) {
+def_EHelper(jalr) {        
     rtl_li(s, s1, s->pc + 4);
     rtl_addi(s, s0, id_src1->preg, id_src2->imm);
     rtl_andi(s, s0, s0, ~(sword_t)1);
     rtl_jr(s, s0);
     rtl_mv(s, ddest, s1);
+
+    FuncTraceEvent* event = new_ftrace_event();
+    event->type = FTRACE_JMP;
+    event->now_pc = s->pc;
+    event->jmp_pc = s->dnpc;
 }
 
 def_EHelper(lui) {

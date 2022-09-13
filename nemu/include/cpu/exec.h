@@ -3,6 +3,6 @@
 
 #include <cpu/decode.h>
 
-#define def_EHelper(name) static inline void concat(exec_, name) (Decode *s)
+#define def_EHelper(name) static inline void concat(exec_, name)(Decode * s)
 
 #endif

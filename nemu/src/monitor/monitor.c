@@ -120,6 +120,8 @@ void init_monitor(int argc, char *argv[]) {
     MUXDEF(CONFIG_ISA_riscv64, "riscv64", "bad")))) "-pc-linux-gnu"
   ));
 
+  init_ftrace();
+  
   /* Display welcome message. */
   welcome();
 }

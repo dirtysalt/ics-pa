@@ -1,3 +1,4 @@
 #!/bin/bash
 cd /home/dirlt/repo/ics-pa/am-kernels/tests/cpu-tests
 make ARCH=$ISA-nemu run
+# make ARCH=native run

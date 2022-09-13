@@ -37,6 +37,7 @@ void init_mem() {
       (paddr_t)CONFIG_MBASE, (paddr_t)CONFIG_MBASE + CONFIG_MSIZE);
 }
 
+// TODO(yan): add mtrace functionality.
 word_t paddr_read(paddr_t addr, int len) {
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   MUXDEF(CONFIG_DEVICE, return mmio_read(addr, len),
