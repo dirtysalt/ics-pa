@@ -9,3 +9,5 @@ sudo apt-get install libreadline-dev    # a library used later
 sudo apt-get install libsdl2-dev        # a library used later
 sudo apt-get install llvm-11               # llvm project, which contains libraries used later
 sudo apt-get install g++-riscv64-linux-gnu binutils-riscv64-linux-gnu
+sudo apt-get install device-tree-compiler
+
