@@ -5,8 +5,8 @@
 
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
-static inline int write_str(char* s, int n, const char* buf) {
-    if (s == NULL) {
+static inline int write_str(char* s, int n, const char* buf, bool stdout) {
+    if (stdout) {
         for (int i = 0; buf[i]; i++) {
             putch(buf[i]);
         }
@@ -14,12 +14,12 @@ static inline int write_str(char* s, int n, const char* buf) {
     }
     int i = 0;
     for (i = 0; i < n && buf[i]; i++) {
-        putch(buf[i]);
+        s[i] = buf[i];
     }
     return i;
 }
 
-static inline int write_int(char* s, int n, int d) {
+static inline int write_int(char* s, int n, int d, bool stdout) {
     char tmp[32];
     char* buf = tmp + 31;
     *buf = 0;
@@ -30,11 +30,11 @@ static inline int write_int(char* s, int n, int d) {
         *(--buf) = '0' + d % 10;
         d = d / 10;
     }
-    return write_str(s, n, buf);
+    return write_str(s, n, buf, stdout);
 }
 
-static inline int write_char(char* s, int n, char c) {
-    if (s == NULL) {
+static inline int write_char(char* s, int n, char c, bool stdout) {
+    if (stdout) {
         putch(c);
         return 0;
     }
@@ -43,6 +43,38 @@ static inline int write_char(char* s, int n, char c) {
     }
     *s = c;
     return 1;
+}
+
+static int _vsnprintf(char* out, size_t n, const char* fmt, bool stdout, va_list ap) {
+    int j = 0;
+    if (stdout) {
+        write_str(out, 5, "[KKK]", stdout);
+        j += 5;
+    }
+
+    for (int i = 0; fmt[i] != 0; i++) {
+        char c = fmt[i];
+        if (c == '%') {
+            c = fmt[i + 1];
+            i++;
+            if (c == 'd') {
+                int val = va_arg(ap, int);
+                j += write_int(out + j, n - j, val, stdout);
+            } else if (c == 's') {
+                const char* s = va_arg(ap, const char*);
+                j += write_str(out + j, n - j, s, stdout);
+            } else {
+                panic("directive not supported");
+            }
+        } else {
+            j += write_char(out + j, n - j, c, stdout);
+        }
+        if (j >= n) return n;
+    }
+    if (!stdout) {
+        out[j] = 0;
+    }
+    return j;
 }
 
 int printf(const char* fmt, ...) {
@@ -77,28 +109,6 @@ int snprintf(char* out, size_t n, const char* fmt, ...) {
 }
 
 int vsnprintf(char* out, size_t n, const char* fmt, va_list ap) {
-    int j = 0;
-    for (int i = 0; fmt[i] != 0; i++) {
-        char c = fmt[i];
-        if (c == '%') {
-            c = fmt[i + 1];
-            i++;
-            if (c == 'd') {
-                int val = va_arg(ap, int);
-                j += write_int(out + j, n - j, val);
-            } else if (c == 's') {
-                const char* s = va_arg(ap, const char*);
-                j += write_str(out + j, n - j, s);
-            } else {
-                panic("directive not supported");
-            }
-        } else {
-            j += write_char(out + j, n - j, c);
-        }
-        if (j >= n) return n;
-    }
-    out[j] = 0;
-    return j;
+    return _vsnprintf(out, n, fmt, false, ap);
 }
-
 #endif
