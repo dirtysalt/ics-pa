@@ -9,7 +9,8 @@ void pio_write(ioaddr_t addr, int len, uint32_t data);
 FuncTraceEvent func_trace_events[1024];
 int func_trace_number = 0;
 
-void init_ftrace() {
+void init_ftrace(const char* elf_file) {
+    Log("init ftrace with elf file: %s", elf_file);
     func_trace_number = 0;
 }
 
@@ -19,6 +20,7 @@ FuncTraceEvent* new_ftrace_event() {
 }
 
 static void dump_ftrace() {
+    return;
     int depth = 0;
     for (int i = 0; i < func_trace_number; i++) {
         FuncTraceEvent* event = &func_trace_events[i];
@@ -26,6 +28,7 @@ static void dump_ftrace() {
         for (int j = 0; j < 2 * depth; j++) {
             putchar(' ');
         }
+        // TODO(yan): parse elf file.
         // it's hard to tell if a jmp is call/ret.
         // but we can tell from address.
         // if address is the start of function address, then it's call
