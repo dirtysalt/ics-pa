@@ -7,6 +7,10 @@
 
 static inline int write_str(char* s, int n, const char* buf, bool stdout) {
     if (stdout) {
+        if (buf == NULL) {
+            putstr("null");
+            return 0;
+        }
         for (int i = 0; buf[i]; i++) {
             putch(buf[i]);
         }
