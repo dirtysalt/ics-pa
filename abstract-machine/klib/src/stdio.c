@@ -50,6 +50,7 @@ static int _vsnprintf(char* out, size_t n, const char* fmt, bool stdout, va_list
     for (int i = 0; fmt[i] != 0; i++) {
         char c = fmt[i];
         if (c == '%') {
+            // TODO(yan): I don't want to correctly handle alignment and prefix 0.
             while (fmt[i + 1] >= '0' && fmt[i + 1] <= '9') i++;
             c = fmt[i + 1];
             i++;

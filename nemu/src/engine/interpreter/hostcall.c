@@ -6,6 +6,7 @@
 uint32_t pio_read(ioaddr_t addr, int len);
 void pio_write(ioaddr_t addr, int len, uint32_t data);
 
+#ifdef CONFIG_FTRACE
 FuncTraceEvent func_trace_events[10240];
 int func_trace_number = 0;
 
@@ -81,6 +82,7 @@ void dump_ftrace() {
         printf("[ %s @ " FMT_WORD "]\n", name, event->jmp_pc);
     }
 }
+#endif
 
 void set_nemu_state(int state, vaddr_t pc, int halt_ret) {
     nemu_state.state = state;
