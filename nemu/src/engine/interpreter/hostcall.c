@@ -26,7 +26,7 @@ static void inline print_indent(int depth) {
     }
 }
 
-static void dump_ftrace() {
+void dump_ftrace() {
     int size = 0;
     FuncEntry* entries = list_func_entries(&size);
 
@@ -121,7 +121,9 @@ def_rtl(hostcall, uint32_t id, rtlreg_t* dest, const rtlreg_t* src1, const rtlre
     switch (id) {
     case HOSTCALL_EXIT:
         difftest_skip_ref();
+#ifdef CONFIG_FTRACE
         dump_ftrace();
+#endif
         set_nemu_state(NEMU_END, s->pc, *src1);
         break;
     case HOSTCALL_INV:

@@ -135,7 +135,9 @@ void init_monitor(int argc, char* argv[]) {
                                     MUXDEF(CONFIG_ISA_riscv32, "riscv32",
                                            MUXDEF(CONFIG_ISA_riscv64, "riscv64", "bad")))) "-pc-linux-gnu"));
 
+#ifdef CONFIG_FTRACE
     init_ftrace(elf_file);
+#endif
 
     /* Display welcome message. */
     welcome();

@@ -210,4 +210,7 @@ config RT_CHECK
 config WATCHPOINT
   bool "Enable watchpoint"
   default n
+config FTRACE
+  bool "Enable ftrace"
+  default n
 endmenu
