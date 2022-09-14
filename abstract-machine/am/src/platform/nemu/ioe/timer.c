@@ -3,11 +3,11 @@
 
 void __am_timer_init() {}
 
-void __am_timer_uptime(AM_TIMER_UPTIME_T* uptime) {    
+void __am_timer_uptime(AM_TIMER_UPTIME_T* uptime) {
     // timer.c in nemu,
     // I have to read 4 bytes after to load value
-    uint32_t lo = inl(RTC_ADDR + 4);
-    uint32_t hi = inl(RTC_ADDR);
+    uint32_t hi = inl(RTC_ADDR + 4);
+    uint32_t lo = inl(RTC_ADDR);
     uint64_t us = ((uint64_t)hi << 32) | (uint64_t)lo;
     uptime->us = us;
 }

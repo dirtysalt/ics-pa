@@ -26,23 +26,27 @@ def_EHelper(jal) {
 
     rtl_j(s, s->pc + ext);
 
+#ifdef CONFIG_FTRACE
     FuncTraceEvent* event = new_ftrace_event();
     event->type = FTRACE_JMP;
     event->now_pc = s->pc;
     event->jmp_pc = s->dnpc;
+#endif
 }
 
-def_EHelper(jalr) {        
+def_EHelper(jalr) {
     rtl_li(s, s1, s->pc + 4);
     rtl_addi(s, s0, id_src1->preg, id_src2->imm);
     rtl_andi(s, s0, s0, ~(sword_t)1);
     rtl_jr(s, s0);
     rtl_mv(s, ddest, s1);
 
+#ifdef CONFIG_FTRACE
     FuncTraceEvent* event = new_ftrace_event();
     event->type = FTRACE_JMP;
     event->now_pc = s->pc;
     event->jmp_pc = s->dnpc;
+#endif
 }
 
 def_EHelper(lui) {
@@ -138,4 +142,7 @@ def_EHelper(mul) {
 
 def_EHelper(div) {
     rtl_divs_q(s, ddest, dsrc1, dsrc2);
+}
+def_EHelper(divu) {
+    rtl_divu_q(s, ddest, dsrc1, dsrc2);
 }

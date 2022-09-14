@@ -47,14 +47,10 @@ static inline int write_char(char* s, int n, char c, bool stdout) {
 
 static int _vsnprintf(char* out, size_t n, const char* fmt, bool stdout, va_list ap) {
     int j = 0;
-    if (stdout) {
-        write_str(out, 5, "[KKK]", stdout);
-        j += 5;
-    }
-
     for (int i = 0; fmt[i] != 0; i++) {
         char c = fmt[i];
         if (c == '%') {
+            while (fmt[i + 1] >= '0' && fmt[i + 1] <= '9') i++;
             c = fmt[i + 1];
             i++;
             if (c == 'd') {
@@ -63,6 +59,9 @@ static int _vsnprintf(char* out, size_t n, const char* fmt, bool stdout, va_list
             } else if (c == 's') {
                 const char* s = va_arg(ap, const char*);
                 j += write_str(out + j, n - j, s, stdout);
+            } else if (c == 'c') {
+                char val = va_arg(ap, int);
+                j += write_char(out + j, n - j, val, stdout);
             } else {
                 panic("directive not supported");
             }
@@ -109,6 +108,7 @@ int snprintf(char* out, size_t n, const char* fmt, ...) {
 }
 
 int vsnprintf(char* out, size_t n, const char* fmt, va_list ap) {
-    return _vsnprintf(out, n, fmt, false, ap);
+    bool stdout = (out == NULL) ? true : false;
+    return _vsnprintf(out, n, fmt, stdout, ap);
 }
 #endif
