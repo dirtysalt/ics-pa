@@ -25,6 +25,11 @@ static inline int write_str(char* s, int n, const char* buf, bool stdout) {
 
 static inline int write_int(char* s, int n, int d, bool stdout) {
     char tmp[32];
+    bool neg = false;
+    if (d < 0) {
+        d = -d;
+        neg = true;
+    }
     char* buf = tmp + 31;
     *buf = 0;
     if (d == 0) {
@@ -34,6 +39,32 @@ static inline int write_int(char* s, int n, int d, bool stdout) {
         *(--buf) = '0' + d % 10;
         d = d / 10;
     }
+    if (neg) {
+        *(--buf) = '-';
+    }
+    return write_str(s, n, buf, stdout);
+}
+
+static inline int write_addr(char* s, int n, void* addr, bool stdout) {
+    uintptr_t d = (uintptr_t)addr;
+    char tmp[32];
+    char* buf = tmp + 31;
+    *buf = 0;
+    if (d == 0) {
+        *(--buf) = '0';
+    }
+    while (d != 0) {
+        int v = d % 16;
+        if (v >= 0 && v <= 9) {
+            v += '0';
+        } else {
+            v += 'a' - 10;
+        }
+        *(--buf) = v;
+        d = d / 16;
+    }
+    *(--buf) = 'x';
+    *(--buf) = '0';
     return write_str(s, n, buf, stdout);
 }
 
@@ -67,6 +98,9 @@ static int _vsnprintf(char* out, size_t n, const char* fmt, bool stdout, va_list
             } else if (c == 'c') {
                 char val = va_arg(ap, int);
                 j += write_char(out + j, n - j, val, stdout);
+            } else if (c == 'p') {
+                void* val = va_arg(ap, void*);
+                j += write_addr(out + j, n - j, val, stdout);
             } else {
                 panic("directive not supported");
             }
