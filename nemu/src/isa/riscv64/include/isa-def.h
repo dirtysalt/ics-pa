@@ -3,12 +3,22 @@
 
 #include <common.h>
 
+#define CSR_START_ADDR 0x300
+#define CSR_END_ADDR 0x346
+
+#define CSR_MSTATUS 0x300
+#define CSR_MTVEC 0x305
+#define CSR_MEPC 0x341
+#define CSR_MCAUSE 0x342
+
 typedef struct {
     union {
         uint64_t _64;
     } gpr[32];
-
     vaddr_t pc;
+    union {
+        uint64_t _64;
+    } csr[CSR_END_ADDR - CSR_START_ADDR];
 } riscv64_CPU_state;
 
 // decode

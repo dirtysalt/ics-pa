@@ -155,10 +155,25 @@ def_EHelper(remu) {
     *ddest = (word_t)(a % b);
 }
 
-
 def_EHelper(div) {
     rtl_divs_q(s, ddest, dsrc1, dsrc2);
 }
 def_EHelper(divu) {
     rtl_divu_q(s, ddest, dsrc1, dsrc2);
+}
+
+// =========== csr instructions ==========
+
+def_EHelper(csrrs) {
+    Log("csr index = 0x%lx", id_src2->imm);
+    word_t t = csr(id_src2->imm);
+    csr(id_src2->imm) = t | (*dsrc1);
+    *ddest = t;
+}
+
+def_EHelper(csrrw) {
+    Log("csrrw index = 0x%lx, value = " FMT_WORD, id_src2->imm, *dsrc1);
+    word_t t = csr(id_src2->imm);
+    csr(id_src2->imm) = (*dsrc1);
+    *ddest = t;
 }
