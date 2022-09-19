@@ -3,6 +3,7 @@
 
 #include <common.h>
 
+// https://ibex-core.readthedocs.io/en/latest/03_reference/cs_registers.html#
 #define CSR_START_ADDR 0x300
 #define CSR_END_ADDR 0x346
 
