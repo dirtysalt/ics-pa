@@ -1,22 +1,54 @@
-#include <proc.h>
 #include <elf.h>
+#include <proc.h>
 
 #ifdef __LP64__
-# define Elf_Ehdr Elf64_Ehdr
-# define Elf_Phdr Elf64_Phdr
+#define Elf_Ehdr Elf64_Ehdr
+#define Elf_Phdr Elf64_Phdr
+#define ELF_Addr Elf64_Addr
 #else
-# define Elf_Ehdr Elf32_Ehdr
-# define Elf_Phdr Elf32_Phdr
+#define Elf_Ehdr Elf32_Ehdr
+#define Elf_Phdr Elf32_Phdr
+#define ELF_Addr Elf32_Addr
 #endif
 
-static uintptr_t loader(PCB *pcb, const char *filename) {
-  TODO();
-  return 0;
+size_t ramdisk_read(void* buf, size_t offset, size_t len);
+static void load_segment(Elf_Phdr* header);
+
+static uintptr_t loader(PCB* pcb, const char* filename) {
+    // TODO();
+    Elf_Ehdr elf_header;
+    ramdisk_read(&elf_header, 0, sizeof(elf_header));
+
+    //assert(*(uint32_t*)(elf_header.e_ident) == 0x7f454c46);
+    assert(*(uint32_t*)(elf_header.e_ident) == 0x464c457f);
+
+    size_t offset = elf_header.e_phoff;
+    for (int i = 0; i < elf_header.e_phnum; i++) {
+        Elf_Phdr ph;
+        assert(sizeof(ph) == elf_header.e_phentsize);
+        ramdisk_read(&ph, offset, sizeof(ph));
+        // todo
+        if (ph.p_type == PT_LOAD) {
+            load_segment(&ph);
+        }
+        offset += elf_header.e_phentsize;
+    }
+
+    return elf_header.e_entry;
 }
 
-void naive_uload(PCB *pcb, const char *filename) {
-  uintptr_t entry = loader(pcb, filename);
-  Log("Jump to entry = %p", entry);
-  ((void(*)())entry) ();
+static void load_segment(Elf_Phdr* header) {
+    size_t offset = header->p_offset;
+    char* vaddr = (char*)header->p_vaddr;
+    uint64_t file_size = header->p_filesz;
+    uint64_t mem_size = header->p_memsz;
+    Log("load segment. offset = %p, vaddr = %p, file_size = %p, mem_size = %p", offset, vaddr, file_size, mem_size);
+    memset(vaddr, 0, mem_size);
+    ramdisk_read(vaddr, offset, file_size);
 }
 
+void naive_uload(PCB* pcb, const char* filename) {
+    uintptr_t entry = loader(pcb, filename);
+    Log("Jump to entry = %p", entry);
+    ((void (*)())entry)();
+}
