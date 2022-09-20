@@ -23,6 +23,7 @@ SECTIONS {
     *(.sbss*)
     *(.scommon)
   }
+  /* TODO(yan): 这个安排是把stack放在了heap之前 */
   _stack_top = ALIGN(0x1000);
   . = _stack_top + 0x8000;
   _stack_pointer = .;
