@@ -27,7 +27,23 @@ enum {
 
 static void handle_syscall(Event* e, Context* c) {
     if (e->cause == SYS_exit) {
+        Log("syscall exit. code = %d", c->GPR2);
         halt(c->GPR2);
+    } else if (e->cause == SYS_write) {
+        int fd = c->GPR2;
+        char* buf = (char*)c->GPR3;
+        size_t count = c->GPR4;
+        Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);
+        // stdout/stderr
+        if (fd == 1 || fd == 2) {
+            for (size_t i = 0; i < count; i++) {
+                putch(buf[i]);
+            }
+        }        
+        c->GPRx = count;
+    } else if (e->cause == SYS_close) {
+        int fd = c->GPR2;
+        Log("syscall close. fd = %d", fd);
     }
 }
 

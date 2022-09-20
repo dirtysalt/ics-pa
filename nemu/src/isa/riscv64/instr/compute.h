@@ -26,6 +26,8 @@ def_EHelper(jal) {
 
     rtl_j(s, s->pc + ext);
 
+    // Log("jal. pc = " FMT_WORD ", next = " FMT_WORD, s->pc, s->dnpc);
+
 #ifdef CONFIG_FTRACE
     FuncTraceEvent* event = new_ftrace_event();
     event->type = FTRACE_JMP;
@@ -41,6 +43,8 @@ def_EHelper(jalr) {
     rtl_jr(s, s0);
     rtl_mv(s, ddest, s1);
 
+    // Log("jalr. pc = " FMT_WORD ", next = " FMT_WORD, s->pc, s->dnpc);
+    
 #ifdef CONFIG_FTRACE
     FuncTraceEvent* event = new_ftrace_event();
     event->type = FTRACE_JMP;
@@ -165,14 +169,14 @@ def_EHelper(divu) {
 // =========== csr instructions ==========
 
 def_EHelper(csrrs) {
-    Log("csrrs index = 0x%lx", id_src2->imm);
+    //    Log("csrrs index = 0x%lx", id_src2->imm);
     word_t t = csr(id_src2->imm);
     csr(id_src2->imm) = t | (*dsrc1);
     *ddest = t;
 }
 
 def_EHelper(csrrw) {
-    Log("csrrw index = 0x%lx, value = " FMT_WORD, id_src2->imm, *dsrc1);
+    //    Log("csrrw index = 0x%lx, value = " FMT_WORD, id_src2->imm, *dsrc1);
     word_t t = csr(id_src2->imm);
     csr(id_src2->imm) = (*dsrc1);
     *ddest = t;
@@ -181,13 +185,13 @@ def_EHelper(csrrw) {
 def_EHelper(ecall) {
     word_t no = gpr(17);
     word_t epc = s->snpc;
-    Log("ecall pc = " FMT_WORD ", no = " FMT_WORD ", epc = " FMT_WORD, s->pc, no, epc);
+    //    Log("ecall pc = " FMT_WORD ", no = " FMT_WORD ", epc = " FMT_WORD, s->pc, no, epc);
     word_t dnpc = isa_raise_intr(no, epc);
     s->dnpc = dnpc;
 }
 
 def_EHelper(mret) {
     word_t epc = csr(CSR_MEPC);
-    Log("mret pc = " FMT_WORD ", epc = " FMT_WORD, s->pc, epc);
+    //    Log("mret pc = " FMT_WORD ", epc = " FMT_WORD, s->pc, epc);
     s->dnpc = epc;
 }

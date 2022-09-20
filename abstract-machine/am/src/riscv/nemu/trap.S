@@ -47,6 +47,7 @@ __am_asm_trap:
   or t1, t1, a0
   csrw mstatus, t1
 
+  # first argument as ctx pointer.
   mv a0, sp
   jal __am_irq_handle
 
@@ -56,6 +57,7 @@ __am_asm_trap:
   csrw mepc, t2
 
   MAP(REGS, POP)
-
+  
   addi sp, sp, CONTEXT_SIZE
+
   mret
