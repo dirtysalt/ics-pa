@@ -25,6 +25,11 @@ enum {
     SYS_gettimeofday
 };
 
+// in linker.ld, program break.
+extern char _end;
+char* program_break = &_end;
+#define PGB (program_break)
+
 static void handle_syscall(Event* e, Context* c) {
     if (e->cause == SYS_exit) {
         Log("syscall exit. code = %d", c->GPR2);
@@ -33,17 +38,23 @@ static void handle_syscall(Event* e, Context* c) {
         int fd = c->GPR2;
         char* buf = (char*)c->GPR3;
         size_t count = c->GPR4;
-        Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);
+        // Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);
         // stdout/stderr
         if (fd == 1 || fd == 2) {
             for (size_t i = 0; i < count; i++) {
                 putch(buf[i]);
             }
-        }        
+        }
         c->GPRx = count;
     } else if (e->cause == SYS_close) {
         int fd = c->GPR2;
         Log("syscall close. fd = %d", fd);
+    } else if (e->cause == SYS_brk) {
+        size_t inc = c->GPR2;
+        uintptr_t ret = (uintptr_t)PGB;
+        Log("syscall sbrk. inc = %p, ret = %p", inc, ret);
+        PGB += inc;
+        c->GPRx = ret;
     }
 }
 
@@ -54,7 +65,7 @@ static Context* do_event(Event e, Context* c) {
         break;
     }
     case EVENT_SYSCALL: {
-        Log("event syscall. number = %p", e.cause);
+        // Log("event syscall. number = %p", e.cause);
         handle_syscall(&e, c);
         break;
     }
