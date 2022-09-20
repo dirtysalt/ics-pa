@@ -165,7 +165,7 @@ def_EHelper(divu) {
 // =========== csr instructions ==========
 
 def_EHelper(csrrs) {
-    Log("csr index = 0x%lx", id_src2->imm);
+    Log("csrrs index = 0x%lx", id_src2->imm);
     word_t t = csr(id_src2->imm);
     csr(id_src2->imm) = t | (*dsrc1);
     *ddest = t;
@@ -176,4 +176,17 @@ def_EHelper(csrrw) {
     word_t t = csr(id_src2->imm);
     csr(id_src2->imm) = (*dsrc1);
     *ddest = t;
+}
+
+def_EHelper(ecall) {
+    word_t no = gpr(17);
+    word_t epc = s->snpc;
+    Log("ecall pc = " FMT_WORD ", no = " FMT_WORD ", epc = " FMT_WORD, s->pc, no, epc);
+    word_t dnpc = isa_raise_intr(no, epc);
+    s->dnpc = dnpc;
+}
+
+def_EHelper(mret) {
+    word_t epc = csr(CSR_MEPC);
+    s->dnpc = epc;
 }

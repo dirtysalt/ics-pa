@@ -15,6 +15,6 @@ static inline const char* reg_name(int idx, int width) {
     return regs[check_reg_idx(idx)];
 }
 
-#define csr(idx) (cpu.csr[idx - CSR_START_ADDR]._64)
+// #define csr(idx) (cpu.csr[idx - CSR_START_ADDR]._64)
 
 #endif

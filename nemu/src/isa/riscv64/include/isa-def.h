@@ -11,6 +11,7 @@
 #define CSR_MTVEC 0x305
 #define CSR_MEPC 0x341
 #define CSR_MCAUSE 0x342
+#define CSR_MSTATUS_INIT 0xa00001800
 
 typedef struct {
     union {
@@ -21,6 +22,8 @@ typedef struct {
         uint64_t _64;
     } csr[CSR_END_ADDR - CSR_START_ADDR];
 } riscv64_CPU_state;
+
+#define csr(idx) (cpu.csr[idx - CSR_START_ADDR]._64)
 
 // decode
 typedef struct {
