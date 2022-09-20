@@ -188,5 +188,6 @@ def_EHelper(ecall) {
 
 def_EHelper(mret) {
     word_t epc = csr(CSR_MEPC);
+    Log("mret pc = " FMT_WORD ", epc = " FMT_WORD, s->pc, epc);
     s->dnpc = epc;
 }
