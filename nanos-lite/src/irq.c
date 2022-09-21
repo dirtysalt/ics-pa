@@ -1,5 +1,5 @@
 #include <common.h>
-
+#include <fs.h>
 void halt(int code);
 
 enum {
@@ -38,22 +38,50 @@ static void handle_syscall(Event* e, Context* c) {
         int fd = c->GPR2;
         char* buf = (char*)c->GPR3;
         size_t count = c->GPR4;
-        // Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);
+        Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);
         // stdout/stderr
-        if (fd == 1 || fd == 2) {
-            for (size_t i = 0; i < count; i++) {
-                putch(buf[i]);
-            }
-        }
-        c->GPRx = count;
+        // if (fd == 1 || fd == 2) {
+        //     for (size_t i = 0; i < count; i++) {
+        //         putch(buf[i]);
+        //     }
+        // }
+        size_t ret = fs_write(fd, buf, count);
+        c->GPRx = ret;
+
     } else if (e->cause == SYS_close) {
         int fd = c->GPR2;
         Log("syscall close. fd = %d", fd);
+        c->GPRx = fs_close(fd);
+
     } else if (e->cause == SYS_brk) {
         size_t inc = c->GPR2;
         uintptr_t ret = (uintptr_t)PGB;
         Log("syscall sbrk. inc = %p, ret = %p", inc, ret);
         PGB += inc;
+        c->GPRx = ret;
+
+    } else if (e->cause == SYS_open) {
+        const char* path = (const char*)c->GPR2;
+        Log("syscall open. path = %s", path);
+        int flags = c->GPR3;
+        int mode = c->GPR4;
+        int fd = fs_open(path, flags, mode);
+        c->GPRx = fd;
+
+    } else if (e->cause == SYS_read) {
+        int fd = c->GPR2;
+        char* buf = (char*)c->GPR3;
+        size_t count = c->GPR4;
+        Log("syscall read. fd = %d, buf = %p, count = %p", fd, buf, count);
+        size_t ret = fs_read(fd, buf, count);
+        c->GPRx = ret;
+
+    } else if (e->cause == SYS_lseek) {
+        int fd = c->GPR2;
+        size_t offset = c->GPR3;
+        int whence = c->GPR4;
+        Log("syscall seek. fd = %d, offset = %p, whence = %p", fd, offset, whence);
+        size_t ret = fs_lseek(fd, offset, whence);
         c->GPRx = ret;
     }
 }

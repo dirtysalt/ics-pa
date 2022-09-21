@@ -5,7 +5,7 @@
 static Context* (*user_handler)(Event, Context*) = NULL;
 
 Context* __am_irq_handle(Context* c) {
-   printf("__am_irq_handle. mcause = %p, mstatus = %p, mepc = %p, a7 = %p\n", c->mcause, c->mstatus, c->mepc, c->GPR1);
+  //  printf("__am_irq_handle. mcause = %p, mstatus = %p, mepc = %p, a7 = %p\n", c->mcause, c->mstatus, c->mepc, c->GPR1);
     if (user_handler) {
         Event ev = {0};
         // [0, 100) are syscall number.
