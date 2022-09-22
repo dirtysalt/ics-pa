@@ -32,10 +32,35 @@ size_t events_read(void* buf, size_t offset, size_t len) {
 }
 
 size_t dispinfo_read(void* buf, size_t offset, size_t len) {
-    return 0;
+    AM_GPU_CONFIG_T t = io_read(AM_GPU_CONFIG);
+    int width = t.width;
+    int height = t.height;
+    char* b = (char*)buf;
+    memcpy(b, &width, sizeof(width));
+    memcpy(b + 4, &height, sizeof(height));
+    return 8;
 }
 
+struct DrawRequest {
+    uint32_t* px;
+    int x;
+    int y;
+    int w;
+    int h;
+};
+
 size_t fb_write(const void* buf, size_t offset, size_t len) {
+    struct DrawRequest* req = (struct DrawRequest*)buf;
+    assert(len == sizeof(*req));
+    AM_GPU_FBDRAW_T t;
+    t.pixels = req->px;
+    t.x = req->x;
+    t.y = req->y;
+    t.w = req->w;
+    t.h = req->h;
+    t.sync = true;
+    Log("fb write. pixels = %p, x = %d, y = %d, w = %d, h = %d", t.pixels, t.x, t.y, t.w, t.h);
+    ioe_write(AM_GPU_FBDRAW, &t);
     return 0;
 }
 

@@ -77,9 +77,7 @@ static void handle_syscall(Event* e, Context* c) {
         int fd = c->GPR2;
         char* buf = (char*)c->GPR3;
         size_t count = c->GPR4;
-        if (fd != 26) {
-            Log("syscall read. fd = %d, buf = %p, count = %p", fd, buf, count);
-        }
+        // Log("syscall read. fd = %d, buf = %p, count = %p", fd, buf, count);
         size_t ret = fs_read(fd, buf, count);
         c->GPRx = ret;
 

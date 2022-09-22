@@ -20,7 +20,7 @@ uint32_t NDL_GetTicks() {
     return t;
 }
 
-int NDL_PollEvent(char* buf, int len) {  
+int NDL_PollEvent(char* buf, int len) {
     return read(event_fd, buf, len);
 }
 
@@ -43,9 +43,33 @@ void NDL_OpenCanvas(int* w, int* h) {
         }
         close(fbctl);
     }
+
+    int fd = open("/proc/dispinfo", 0, 0);
+    char buf[8];
+    read(fd, buf, sizeof(buf));
+    int width, height;
+    memcpy(&width, buf, sizeof(width));
+    memcpy(&height, buf + 4, sizeof(height));
+    *w = width;
+    *h = height;
+    screen_w = width;
+    screen_h = height;
 }
 
-void NDL_DrawRect(uint32_t* pixels, int x, int y, int w, int h) {}
+struct DrawRequest {
+    uint32_t* px;
+    int x;
+    int y;
+    int w;
+    int h;
+};
+
+void NDL_DrawRect(uint32_t* pixels, int x, int y, int w, int h) {
+    // normally we should write bytes, but sice we are in a single app
+    // we can pass pointer.
+    struct DrawRequest req = {.px = pixels, .x = x, .y = y, .w = w, .h = h};
+    write(fbdev, &req, sizeof(req));
+}
 
 void NDL_OpenAudio(int freq, int channels, int samples) {}
 
@@ -64,9 +88,11 @@ int NDL_Init(uint32_t flags) {
         evtdev = 3;
     }
     event_fd = open("/dev/events", 0, 0);
+    fbdev = open("/dev/fb", 0, 0);
     return 0;
 }
 
 void NDL_Quit() {
     close(event_fd);
+    close(fbdev);
 }
