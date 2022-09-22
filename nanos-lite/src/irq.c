@@ -1,8 +1,8 @@
+#include <am.h>
 #include <common.h>
 #include <fs.h>
-#include <am.h>
-#include <klib.h>
 #include <klib-macros.h>
+#include <klib.h>
 #include <sys/time.h>
 
 void halt(int code);
@@ -77,7 +77,9 @@ static void handle_syscall(Event* e, Context* c) {
         int fd = c->GPR2;
         char* buf = (char*)c->GPR3;
         size_t count = c->GPR4;
-        Log("syscall read. fd = %d, buf = %p, count = %p", fd, buf, count);
+        if (fd != 26) {
+            Log("syscall read. fd = %d, buf = %p, count = %p", fd, buf, count);
+        }
         size_t ret = fs_read(fd, buf, count);
         c->GPRx = ret;
 
@@ -94,7 +96,7 @@ static void handle_syscall(Event* e, Context* c) {
         // ideally it should call AM ioe_read
         struct timeval* tv = (struct timeval*)(c->GPR2);
         // struct timezone* tz = (struct timezone*)(c->GPR3);
-        uint64_t us = io_read(AM_TIMER_UPTIME).us;        
+        uint64_t us = io_read(AM_TIMER_UPTIME).us;
         tv->tv_sec = us / 1000000;
         tv->tv_usec = us % 1000000;
         c->GPRx = 0;
@@ -122,4 +124,3 @@ void init_irq(void) {
     Log("Initializing interrupt/exception handler...");
     cte_init(do_event);
 }
-

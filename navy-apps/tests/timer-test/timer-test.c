@@ -11,7 +11,7 @@ int ok(struct timeval* before, struct timeval *now) {
    return 0;
 }
 
-int main() {
+int xmain() {
 	struct timeval last;
 	for(;;) {
 		struct timeval now;
@@ -22,4 +22,20 @@ int main() {
 		}
 	}
 	return 0;
+}
+
+
+#include <NDL.h>
+int main() {
+	NDL_Init(0);
+	uint32_t last = NDL_GetTicks();
+	for(;;) {
+		uint32_t now = NDL_GetTicks();
+		if ((now - last) > 500) {
+			printf("500ms passed\n");
+			last = now;
+		}
+	}
+	return 0;
+		
 }
