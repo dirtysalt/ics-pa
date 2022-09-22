@@ -1,5 +1,10 @@
 #include <common.h>
 #include <fs.h>
+#include <am.h>
+#include <klib.h>
+#include <klib-macros.h>
+#include <sys/time.h>
+
 void halt(int code);
 
 enum {
@@ -83,6 +88,16 @@ static void handle_syscall(Event* e, Context* c) {
         Log("syscall seek. fd = %d, offset = %p, whence = %p", fd, offset, whence);
         size_t ret = fs_lseek(fd, offset, whence);
         c->GPRx = ret;
+
+    } else if (e->cause == SYS_gettimeofday) {
+        // Log("syscall gettimeofday");
+        // ideally it should call AM ioe_read
+        struct timeval* tv = (struct timeval*)(c->GPR2);
+        // struct timezone* tz = (struct timezone*)(c->GPR3);
+        uint64_t us = io_read(AM_TIMER_UPTIME).us;        
+        tv->tv_sec = us / 1000000;
+        tv->tv_usec = us % 1000000;
+        c->GPRx = 0;
     }
 }
 
@@ -107,3 +122,4 @@ void init_irq(void) {
     Log("Initializing interrupt/exception handler...");
     cte_init(do_event);
 }
+
