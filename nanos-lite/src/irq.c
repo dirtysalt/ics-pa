@@ -43,13 +43,7 @@ static void handle_syscall(Event* e, Context* c) {
         int fd = c->GPR2;
         char* buf = (char*)c->GPR3;
         size_t count = c->GPR4;
-        Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);
-        // stdout/stderr
-        // if (fd == 1 || fd == 2) {
-        //     for (size_t i = 0; i < count; i++) {
-        //         putch(buf[i]);
-        //     }
-        // }
+        Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);        
         size_t ret = fs_write(fd, buf, count);
         c->GPRx = ret;
 
@@ -101,11 +95,12 @@ static void handle_syscall(Event* e, Context* c) {
     }
 }
 
+Context* schedule(Context* c);
 static Context* do_event(Event e, Context* c) {
     switch (e.event) {
     case EVENT_YIELD: {
-        Log("event yield");
-        break;
+        // Log("event yield");
+        return schedule(c);
     }
     case EVENT_SYSCALL: {
         // Log("event syscall. number = %p", e.cause);

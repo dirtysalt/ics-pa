@@ -7,6 +7,15 @@ static PCB pcb_boot = {};
 PCB* current = NULL;
 
 void naive_uload(PCB* pcb, const char* filename);
+void context_uload(PCB* pcb, const char* pathname);
+
+Context* kcontext(Area kstack, void (*entry)(void*), void* arg);
+
+void context_kload(PCB* pcb, void (*entry)(void*), void* arg) {
+    Area stack = {.start = pcb->stack, .end = pcb->stack + sizeof(pcb->stack)};
+    Context* ctx = kcontext(stack, entry, arg);
+    pcb->cp = ctx;
+}
 
 void switch_boot_pcb() {
     current = &pcb_boot;
@@ -21,7 +30,11 @@ void hello_fun(void* arg) {
     }
 }
 
+static int arg0, arg1;
 void init_proc() {
+    Log("arg0 = %p, arg1 = %p", &arg0, &arg1);
+    context_kload(&pcb[0], hello_fun, &arg0);
+    context_kload(&pcb[1], hello_fun, &arg1);
     switch_boot_pcb();
 
     Log("Initializing processes...");
@@ -33,9 +46,12 @@ void init_proc() {
     // naive_uload(NULL, "/bin/file-test");
     // naive_uload(NULL, "/bin/timer-test");
     // naive_uload(NULL, "/bin/event-test");
-    naive_uload(NULL, "/bin/bmp-test");
+    // naive_uload(NULL, "/bin/bmp-test");
 }
 
 Context* schedule(Context* prev) {
-    return NULL;
+    current->cp = prev;
+    // always switch to pcb[0]
+    current = (current == &pcb[0] ? &pcb[1] : &pcb[0]);
+    return current->cp;
 }

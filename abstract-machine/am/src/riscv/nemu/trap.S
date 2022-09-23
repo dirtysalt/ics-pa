@@ -50,6 +50,10 @@ __am_asm_trap:
   # first argument as ctx pointer.
   mv a0, sp
   jal __am_irq_handle
+  
+  # TODO(yan): we ignore return ctx?
+  # a0 is address of Context*
+  mv sp, a0
 
   LOAD t1, OFFSET_STATUS(sp)
   LOAD t2, OFFSET_EPC(sp)
@@ -57,7 +61,7 @@ __am_asm_trap:
   csrw mepc, t2
 
   MAP(REGS, POP)
-  
+
   addi sp, sp, CONTEXT_SIZE
 
   mret

@@ -5,7 +5,7 @@
 static Context* (*user_handler)(Event, Context*) = NULL;
 
 Context* __am_irq_handle(Context* c) {
-  //  printf("__am_irq_handle. mcause = %p, mstatus = %p, mepc = %p, a7 = %p\n", c->mcause, c->mstatus, c->mepc, c->GPR1);
+    //  printf("__am_irq_handle. mcause = %p, mstatus = %p, mepc = %p, a7 = %p\n", c->mcause, c->mstatus, c->mepc, c->GPR1);
     if (user_handler) {
         Event ev = {0};
         // [0, 100) are syscall number.
@@ -36,7 +36,13 @@ bool cte_init(Context* (*handler)(Event, Context*)) {
 }
 
 Context* kcontext(Area kstack, void (*entry)(void*), void* arg) {
-    return NULL;
+    char* buf = kstack.end - sizeof(Context);
+    Context* ret = (Context*)buf;
+    // return from __am_irq_handle
+    ret->mepc = (uintptr_t)entry;
+    // a0 as first argument.
+    ret->GPR2 = (uintptr_t)arg;
+    return ret;
 }
 
 void yield() {
