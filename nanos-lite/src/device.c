@@ -10,7 +10,9 @@
 
 static const char* keyname[256] __attribute__((used)) = {[AM_KEY_NONE] = "NONE", AM_KEYS(NAME)};
 
+void yield();
 size_t serial_write(const void* buf, size_t offset, size_t len) {
+  yield();
     const char* b = (const char*)buf;
     for (size_t i = 0; i < len; i++) {
         putch(b[i]);

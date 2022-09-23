@@ -31,10 +31,11 @@ void hello_fun(void* arg) {
 }
 
 static int arg0, arg1;
-void init_proc() {
+void init_proc() {    
     Log("arg0 = %p, arg1 = %p", &arg0, &arg1);
     context_kload(&pcb[0], hello_fun, &arg0);
-    context_kload(&pcb[1], hello_fun, &arg1);
+    // context_kload(&pcb[1], hello_fun, &arg1);
+    context_uload(&pcb[1], "/bin/hello");
     switch_boot_pcb();
 
     Log("Initializing processes...");
