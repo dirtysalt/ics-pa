@@ -5,6 +5,7 @@ struct Context {
     // TODO: fix the order of these members to match trap.S
     uintptr_t gpr[32], mcause, mstatus, mepc;
     // TODO(yan): I don't know what's that for? what's dir?
+    // page directory?
     void* pdir;
 };
 

@@ -21,6 +21,7 @@ typedef struct {
     union {
         uint64_t _64;
     } csr[CSR_END_ADDR - CSR_START_ADDR];
+//    uint64_t satp;
 } riscv64_CPU_state;
 
 #define csr(idx) (cpu.csr[idx - CSR_START_ADDR]._64)
