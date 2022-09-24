@@ -9,7 +9,13 @@ void yield() {
 _syscall_(SYS_yield, 0, 0, 0);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+  const char* prefix = "[XXXX]";
+  printf("argc = %d, file = %s\n", argc, argv[0]);
+  printf("argc = %d, argv = %p\n", argc, argv);
+ if (argc > 1) {
+  prefix = argv[1];
+  }
   int ret = write(1, "Hello World!\n", 13);
   if (ret != 13) {
      write(1, "Damn\n", 5);
@@ -20,7 +26,7 @@ int main() {
   while (1) {
     j ++;
     if (j == 10000) {
-      printf("Hello World from Navy-apps for the %dth time!\n", i ++);
+      printf("%s: Hello World from Navy-apps for the %dth time!\n", prefix,i ++);
       j = 0;
       yield();
     }

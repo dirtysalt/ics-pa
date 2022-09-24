@@ -7,7 +7,8 @@ static PCB pcb_boot = {};
 PCB* current = NULL;
 
 void naive_uload(PCB* pcb, const char* filename);
-void context_uload(PCB* pcb, const char* pathname);
+// void context_uload(PCB* pcb, const char* pathname);
+void context_uload(PCB* pcb, const char* filename, char* const argv[], char* const envp[]);
 
 Context* kcontext(Area kstack, void (*entry)(void*), void* arg);
 
@@ -31,11 +32,13 @@ void hello_fun(void* arg) {
 }
 
 static int arg0, arg1;
-void init_proc() {    
+char* const argv[] = {"[FUCK]", NULL};
+
+void init_proc() {
     Log("arg0 = %p, arg1 = %p", &arg0, &arg1);
     context_kload(&pcb[0], hello_fun, &arg0);
     // context_kload(&pcb[1], hello_fun, &arg1);
-    context_uload(&pcb[1], "/bin/hello");
+    context_uload(&pcb[1], "/bin/hello", argv, NULL);
     switch_boot_pcb();
 
     Log("Initializing processes...");

@@ -1,8 +1,7 @@
+#include <am.h>
 #include <elf.h>
 #include <fs.h>
 #include <proc.h>
-#include <am.h>
-
 
 #ifdef __LP64__
 #define Elf_Ehdr Elf64_Ehdr
@@ -99,10 +98,94 @@ void naive_uload(PCB* pcb, const char* filename) {
 
 Context* ucontext(AddrSpace* as, Area kstack, void* entry);
 
-void context_uload(PCB* pcb, const char* filename) {
+// void context_uload(PCB* pcb, const char* filename) {
+//     Area kstack = {.start = pcb->stack, .end = pcb->stack + sizeof(pcb->stack)};
+//     uintptr_t entry = loader(pcb, filename);
+//     Context* ctx = ucontext(NULL, kstack, (void*)entry);
+//     // a0. looks at riscv64.S, move sp, a0 to initialize stack pointer.
+//     ctx->GPRx = (uintptr_t)heap.end;
+//     pcb->cp = ctx;
+// }
+
+void context_uload(PCB* pcb, const char* filename, char* const argv[], char* const envp[]) {
     Area kstack = {.start = pcb->stack, .end = pcb->stack + sizeof(pcb->stack)};
     uintptr_t entry = loader(pcb, filename);
     Context* ctx = ucontext(NULL, kstack, (void*)entry);
-    ctx->GPRx = (uintptr_t)heap.end;
+
+    // place them onto stack from stack top.
+    uintptr_t argc = 0;
+    int string_size = 0;
+
+    // filename as the first argument.
+    string_size += strlen(filename) + 1;
+
+    if (argv) {
+        while (argv[argc]) {
+            string_size += strlen(argv[argc]) + 1;
+            argc++;
+        }
+    }
+
+    int envc = 0;
+    if (envp) {
+        while (envp[envc]) {
+            string_size += strlen(envp[envc]) + 1;
+            envc++;
+        }
+    }
+
+    // argc(int) (argc+1)(pointer)  (envc+1)(pointer) strings.
+    argc += 1; // filename.
+    int arg_size = (1 + argc + 1 + envc + 1) * sizeof(uintptr_t);
+    char* stack = (char*)(heap.end - arg_size - string_size);
+    Log("uload. argc = %d, arg_size = %d, string_size = %d, stack = %p", (int)argc, arg_size, string_size, stack);
+
+    // copy argv
+    char* p = stack;
+    char* p2 = p + arg_size;
+
+    // make it uintptr_t size.
+    memcpy(p, &argc, sizeof(uintptr_t));
+    p += sizeof(uintptr_t);
+
+    {
+        *(char**)p = p2;
+        strcpy(p2, filename);
+        p2 += strlen(filename) + 1;
+        p += sizeof(char*);
+    }
+
+    if (argv) {
+        for (int i = 0; argv[i]; i++) {
+            *(char**)p = p2;
+            strcpy(p2, argv[i]);
+            p2 += strlen(argv[i]) + 1;
+            p += sizeof(char*);
+        }
+    }
+    *(char**)p = 0;
+    p += sizeof(char*);
+
+    // copy envp
+    if (envp) {
+        for (int i = 0; envp[i]; i++) {
+            *(char**)p = p2;
+            strcpy(p2, envp[i]);
+            p2 += strlen(envp[i]) + 1;
+            p += sizeof(char*);
+        }
+    }
+    *(char**)p = 0;
+    p += sizeof(char*);
+
+    // a0. looks at riscv64.S, move sp, a0 to initialize stack pointer.
+    ctx->GPRx = (uintptr_t)stack;
+
+    {
+        uintptr_t* d = (uintptr_t*)stack;
+        for (int i = 0; i < (argc + 2 + envc + 1); i++) {
+            Log("stack[%d] p = %p, data  = %p", i, d + i, d[i]);
+        }
+    }
     pcb->cp = ctx;
 }
