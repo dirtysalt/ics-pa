@@ -107,7 +107,7 @@ Context* ucontext(AddrSpace* as, Area kstack, void* entry);
 //     pcb->cp = ctx;
 // }
 
-void context_uload(PCB* pcb, const char* filename, char* const argv[], char* const envp[]) {
+void context_uload(PCB* pcb, const char* filename, char* const argv[], char* const envp[], bool reuse_stack) {
     Area kstack = {.start = pcb->stack, .end = pcb->stack + sizeof(pcb->stack)};
     uintptr_t entry = loader(pcb, filename);
     Context* ctx = ucontext(NULL, kstack, (void*)entry);
@@ -116,8 +116,12 @@ void context_uload(PCB* pcb, const char* filename, char* const argv[], char* con
     uintptr_t argc = 0;
     int string_size = 0;
 
-    // filename as the first argument.
-    string_size += strlen(filename) + 1;
+    bool filename_as_arg0 = true;
+
+    if (filename_as_arg0) {
+        // filename as the first argument.
+        string_size += strlen(filename) + 1;
+    }
 
     if (argv) {
         while (argv[argc]) {
@@ -135,9 +139,23 @@ void context_uload(PCB* pcb, const char* filename, char* const argv[], char* con
     }
 
     // argc(int) (argc+1)(pointer)  (envc+1)(pointer) strings.
-    argc += 1; // filename.
+
+    if (filename_as_arg0) {
+        argc += 1; // filename.
+    }
+
     int arg_size = (1 + argc + 1 + envc + 1) * sizeof(uintptr_t);
-    char* stack = (char*)(heap.end - arg_size - string_size);
+    // char* stack = (char*)(heap.end - arg_size - string_size);
+    char* stack_end = NULL;
+    if (!reuse_stack) {
+        char* stack_begin = (char*)new_page(4);
+        stack_end = stack_begin + 4 * PGSIZE;
+        pcb->user_stack_end = stack_end;
+    } else {
+        stack_end = pcb->user_stack_end;
+    }
+    char* stack = stack_end - arg_size - string_size;
+
     Log("uload. argc = %d, arg_size = %d, string_size = %d, stack = %p", (int)argc, arg_size, string_size, stack);
 
     // copy argv
@@ -148,7 +166,7 @@ void context_uload(PCB* pcb, const char* filename, char* const argv[], char* con
     memcpy(p, &argc, sizeof(uintptr_t));
     p += sizeof(uintptr_t);
 
-    {
+    if (filename_as_arg0) {
         *(char**)p = p2;
         strcpy(p2, filename);
         p2 += strlen(filename) + 1;

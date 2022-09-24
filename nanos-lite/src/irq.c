@@ -3,9 +3,12 @@
 #include <fs.h>
 #include <klib-macros.h>
 #include <klib.h>
+#include <proc.h>
 #include <sys/time.h>
 
 void halt(int code);
+void switch_boot_pcb();
+Context* schedule(Context* c);
 
 enum {
     SYS_exit,
@@ -35,7 +38,9 @@ extern char _end;
 char* program_break = &_end;
 #define PGB (program_break)
 
-static void handle_syscall(Event* e, Context* c) {
+void context_uload(PCB* pcb, const char* filename, char* const argv[], char* const envp[], bool reuse_stack);
+
+static Context* handle_syscall(Event* e, Context* c) {
     if (e->cause == SYS_exit) {
         Log("syscall exit. code = %d", c->GPR2);
         halt(c->GPR2);
@@ -43,7 +48,7 @@ static void handle_syscall(Event* e, Context* c) {
         int fd = c->GPR2;
         char* buf = (char*)c->GPR3;
         size_t count = c->GPR4;
-        Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);        
+        Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);
         size_t ret = fs_write(fd, buf, count);
         c->GPRx = ret;
 
@@ -92,19 +97,31 @@ static void handle_syscall(Event* e, Context* c) {
         tv->tv_sec = us / 1000000;
         tv->tv_usec = us % 1000000;
         c->GPRx = 0;
+
+    } else if (e->cause == SYS_execve) {
+        const char* filename = (const char*)c->GPR2;
+        char* const* argv = (char* const*)c->GPR3;
+        char* const* envp = (char* const*)c->GPR4;
+        // overwrite current pcb.
+        // PCB* now = current;
+        // because we already use filename_as_arg0, so we ignore first argument.
+        context_uload(current, filename, argv + 1, envp, false);
+        switch_boot_pcb();
+        c = schedule(current->cp);
     }
+    return c;
 }
 
-Context* schedule(Context* c);
 static Context* do_event(Event e, Context* c) {
     switch (e.event) {
     case EVENT_YIELD: {
         // Log("event yield");
-        return schedule(c);
+        c = schedule(c);
+        break;
     }
     case EVENT_SYSCALL: {
         // Log("event syscall. number = %p", e.cause);
-        handle_syscall(&e, c);
+        c = handle_syscall(&e, c);
         break;
     }
     default:
