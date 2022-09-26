@@ -63,7 +63,7 @@ static Context* handle_syscall(Event* e, Context* c) {
     } else if (e->cause == SYS_brk) {
         size_t inc = c->GPR2;
 
-        // // TODO(yan): a shared brk from kernel space.
+        // // TODO(yan): brk from program break to heap start.
         // uintptr_t ret = (uintptr_t)PGB;
         // Log("syscall sbrk. inc = %p, ret = %p", inc, ret);
         // if ((ret + inc) > program_end) {
@@ -74,6 +74,7 @@ static Context* handle_syscall(Event* e, Context* c) {
         //     c->GPRx = ret;
         // }
 
+        // TODO(yan): now brk can grow beyond program break.
         uintptr_t brk = current->max_brk;
         if (mm_brk(brk + inc) == 0) {
             c->GPRx = brk;
