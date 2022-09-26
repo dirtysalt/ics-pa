@@ -34,8 +34,10 @@ enum {
 };
 
 // in linker.ld, program break.
-extern char _end;
-char* program_break = &_end;
+extern char _brk_begin;
+extern char _brk_end;
+char* program_break = &_brk_begin;
+uintptr_t program_end = (uintptr_t)&_brk_end;
 #define PGB (program_break)
 
 void context_uload(PCB* pcb, const char* filename, char* const argv[], char* const envp[], bool reuse_stack);
@@ -61,9 +63,13 @@ static Context* handle_syscall(Event* e, Context* c) {
         size_t inc = c->GPR2;
         uintptr_t ret = (uintptr_t)PGB;
         Log("syscall sbrk. inc = %p, ret = %p", inc, ret);
-        PGB += inc;
-        c->GPRx = ret;
-
+        if ((ret + inc) > program_end) {
+            Log("syscall sbrk failed. about to enter heap zone");
+            c->GPRx = -1;
+        } else {
+            PGB += inc;
+            c->GPRx = ret;
+        }
     } else if (e->cause == SYS_open) {
         const char* path = (const char*)c->GPR2;
         Log("syscall open. path = %s", path);

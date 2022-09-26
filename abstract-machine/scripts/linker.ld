@@ -27,7 +27,14 @@ SECTIONS {
   _stack_top = ALIGN(0x1000);
   . = _stack_top + 0x8000;
   _stack_pointer = .;
-  end = .;
+  end = .;  
   _end = .;
+
+  /* TODO(yan): 从这个地方开始进行sbrk */
+  _brk_begin = .;
+  . = _brk_begin + 0x8000;
+  _brk_end = .;
+
+  /* TODO(yan): 从这个地方开始做page allocation */  
   _heap_start = ALIGN(0x1000);
 }

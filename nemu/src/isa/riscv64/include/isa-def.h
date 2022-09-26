@@ -4,9 +4,10 @@
 #include <common.h>
 
 // https://ibex-core.readthedocs.io/en/latest/03_reference/cs_registers.html#
-#define CSR_START_ADDR 0x300
+#define CSR_START_ADDR 0x180
 #define CSR_END_ADDR 0x346
 
+#define CSR_SATP 0x180
 #define CSR_MSTATUS 0x300
 #define CSR_MTVEC 0x305
 #define CSR_MEPC 0x341
@@ -56,6 +57,6 @@ typedef struct {
     } instr;
 } riscv64_ISADecodeInfo;
 
-#define isa_mmu_check(vaddr, len, type) (MMU_DIRECT)
+// #define isa_mmu_check(vaddr, len, type) (MMU_DIRECT)
 
 #endif

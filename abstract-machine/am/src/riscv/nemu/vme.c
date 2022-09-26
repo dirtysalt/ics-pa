@@ -29,6 +29,7 @@ bool vme_init(void* (*pgalloc_f)(int), void (*pgfree_f)(void*)) {
 
     kas.ptr = pgalloc_f(PGSIZE);
 
+    // work on physical pages.
     int i;
     for (i = 0; i < LENGTH(segments); i++) {
         void* va = segments[i].start;
@@ -36,7 +37,7 @@ bool vme_init(void* (*pgalloc_f)(int), void (*pgfree_f)(void*)) {
             map(&kas, va, va, 0);
         }
     }
-
+    printf("vme_init. pte = %p\n", kas.ptr);
     set_satp(kas.ptr);
     vme_enable = 1;
 
@@ -64,7 +65,51 @@ void __am_switch(Context* c) {
     }
 }
 
-void map(AddrSpace* as, void* va, void* pa, int prot) {}
+void map(AddrSpace* as, void* va, void* pa, int prot) {
+    // allocate page
+    // sv39
+    // 9   9    9    12
+    // L1  L2   L3
+    uint64_t p = (uint64_t)(va);
+    int a0 = (p >> 30) & 0x1ff;
+    int a1 = (p >> 21) & 0x1ff;
+    int a2 = (p >> 12) & 0x1ff;
+    // printf("map va %p -> pa %p a0 = %d, a1 = %d, a2 = %d\n", va, pa, a0, a1, a2);
+    bool trace = false;
+    // if ((a0 == 2) && (a1 == 24) && (a2 == 6)) {
+    //     trace = true;
+    // }
+    uint64_t* pte = (uint64_t*)as->ptr;
+    if (trace) printf("L1 PTE = %p\n", (uintptr_t)pte);
+    // L1.
+    {
+        uint64_t* x = pte + a0;
+        if (!(*x & 0x1)) {
+            // allocate new page.
+            uintptr_t pp = (uintptr_t)pgalloc_usr(PGSIZE);
+            *x = ((pp >> 12) << 12) | 0x337;
+        }
+        pte = (uint64_t*)(((*x) >> 12) << 12);
+    }
+    if (trace) printf("L2 PTE = %p\n", (uintptr_t)pte);
+    // L2.
+    {
+        uint64_t* x = pte + a1;
+        if (!(*x & 0x1)) {
+            // allocate new page.
+            uintptr_t pp = (uintptr_t)pgalloc_usr(PGSIZE);
+            *x = ((pp >> 12) << 12) | 0x337;
+        }
+        pte = (uint64_t*)(((*x) >> 12) << 12);
+    }
+    if (trace) printf("L3 PTE = %p\n", (uintptr_t)pte);
+    // L3.
+    {
+        uint64_t* x = pte + a2;
+        uintptr_t v = (uintptr_t)pa;
+        *x = ((v >> 12) << 12) | 0x337;
+    }
+}
 
 Context* ucontext(AddrSpace* as, Area kstack, void* entry) {
     char* buf = kstack.end - sizeof(Context);
