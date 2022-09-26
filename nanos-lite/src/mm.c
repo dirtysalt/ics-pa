@@ -1,4 +1,5 @@
 #include <memory.h>
+#include <proc.h>
 
 static void* pf = NULL;
 
@@ -24,6 +25,14 @@ void free_page(void* p) {
 
 /* The brk() system call handler. */
 int mm_brk(uintptr_t brk) {
+    // page aligned.
+    uintptr_t max_brk = current->max_brk;
+    while (max_brk < brk) {
+        void* pa = new_page(1);
+        map(&current->as, (void*)max_brk, pa, 0);
+        max_brk += PGSIZE;
+    }
+    current->max_brk = max_brk;
     return 0;
 }
 

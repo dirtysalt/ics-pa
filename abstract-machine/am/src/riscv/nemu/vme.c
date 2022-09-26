@@ -37,7 +37,7 @@ bool vme_init(void* (*pgalloc_f)(int), void (*pgfree_f)(void*)) {
             map(&kas, va, va, 0);
         }
     }
-    printf("vme_init. pte = %p\n", kas.ptr);
+    // printf("vme_init. pte = %p\n", kas.ptr);
     set_satp(kas.ptr);
     vme_enable = 1;
 
@@ -49,6 +49,7 @@ void protect(AddrSpace* as) {
     as->ptr = updir;
     as->area = USER_SPACE;
     as->pgsize = PGSIZE;
+    // TODO(yan): 这样就可以访问kernel space了。
     // map kernel space
     memcpy(updir, kas.ptr, PGSIZE);
 }
@@ -71,6 +72,9 @@ void map(AddrSpace* as, void* va, void* pa, int prot) {
     // 9   9    9    12
     // L1  L2   L3
     uint64_t p = (uint64_t)(va);
+    if (p % PGSIZE != 0) {
+        panic("virtual address not page aligned");
+    }
     int a0 = (p >> 30) & 0x1ff;
     int a1 = (p >> 21) & 0x1ff;
     int a2 = (p >> 12) & 0x1ff;
@@ -116,5 +120,8 @@ Context* ucontext(AddrSpace* as, Area kstack, void* entry) {
     Context* ret = (Context*)buf;
     // return from __am_irq_handle
     ret->mepc = (uintptr_t)entry;
+    if (as != NULL) {
+        ret->pdir = as->ptr;
+    }
     return ret;
 }

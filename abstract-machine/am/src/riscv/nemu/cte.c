@@ -3,8 +3,19 @@
 #include <riscv/riscv.h>
 
 static Context* (*user_handler)(Event, Context*) = NULL;
+void __am_switch(Context* c);
+void __am_get_cur_as(Context* c);
 
 Context* __am_irq_handle(Context* c) {
+    // c->pdir maybe not intiialized.
+    // but we have set initialize satp at `vme_init`
+    // so right here we intialized it, and satp is assured to have kernel map.
+
+    // for ctx has been initialized
+    // since ctx->pdir == satp
+    // so there is no side effect here.
+    __am_get_cur_as(c);
+
     //  printf("__am_irq_handle. mcause = %p, mstatus = %p, mepc = %p, a7 = %p\n", c->mcause, c->mstatus, c->mepc, c->GPR1);
     if (user_handler) {
         Event ev = {0};
@@ -20,6 +31,7 @@ Context* __am_irq_handle(Context* c) {
         c = user_handler(ev, c);
         assert(c != NULL);
     }
+    __am_switch(c);
     return c;
 }
 

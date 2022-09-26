@@ -41,6 +41,7 @@ uintptr_t program_end = (uintptr_t)&_brk_end;
 #define PGB (program_break)
 
 void context_uload(PCB* pcb, const char* filename, char* const argv[], char* const envp[], bool reuse_stack);
+extern int mm_brk(uintptr_t brk);
 
 static Context* handle_syscall(Event* e, Context* c) {
     if (e->cause == SYS_exit) {
@@ -61,15 +62,25 @@ static Context* handle_syscall(Event* e, Context* c) {
 
     } else if (e->cause == SYS_brk) {
         size_t inc = c->GPR2;
-        uintptr_t ret = (uintptr_t)PGB;
-        Log("syscall sbrk. inc = %p, ret = %p", inc, ret);
-        if ((ret + inc) > program_end) {
-            Log("syscall sbrk failed. about to enter heap zone");
-            c->GPRx = -1;
+
+        // // TODO(yan): a shared brk from kernel space.
+        // uintptr_t ret = (uintptr_t)PGB;
+        // Log("syscall sbrk. inc = %p, ret = %p", inc, ret);
+        // if ((ret + inc) > program_end) {
+        //     Log("syscall sbrk failed. about to enter heap zone");
+        //     c->GPRx = -1;
+        // } else {
+        //     PGB += inc;
+        //     c->GPRx = ret;
+        // }
+
+        uintptr_t brk = current->max_brk;
+        if (mm_brk(brk + inc) == 0) {
+            c->GPRx = brk;
         } else {
-            PGB += inc;
-            c->GPRx = ret;
+            c->GPRx = -1;
         }
+
     } else if (e->cause == SYS_open) {
         const char* path = (const char*)c->GPR2;
         Log("syscall open. path = %s", path);
@@ -113,7 +124,7 @@ static Context* handle_syscall(Event* e, Context* c) {
         // because we already use filename_as_arg0, so we ignore first argument.
         context_uload(current, filename, argv + 1, envp, false);
         switch_boot_pcb();
-        c = schedule(current->cp);
+        c = schedule(c);
     }
     return c;
 }

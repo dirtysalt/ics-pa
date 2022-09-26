@@ -7,7 +7,6 @@ static PCB pcb_boot = {};
 PCB* current = NULL;
 
 void naive_uload(PCB* pcb, const char* filename);
-// void context_uload(PCB* pcb, const char* pathname);
 void context_uload(PCB* pcb, const char* filename, char* const argv[], char* const envp[], bool reuse_stack);
 
 Context* kcontext(Area kstack, void (*entry)(void*), void* arg);
@@ -39,7 +38,12 @@ void init_proc() {
     context_kload(&pcb[0], hello_fun, &arg0);
     // context_kload(&pcb[1], hello_fun, &arg1);
     // context_uload(&pcb[1], "/bin/hello", argv_hello, NULL, false);
-    context_uload(&pcb[1], "/bin/exec-test", NULL, NULL, false);
+    // context_uload(&pcb[1], "/bin/exec-test", NULL, NULL, false);
+
+    context_kload(&pcb[1], hello_fun, &arg1);
+    context_uload(&pcb[2], "/bin/hello", argv_hello, NULL, false);
+    context_uload(&pcb[3], "/bin/exec-test", NULL, NULL, false);
+
     switch_boot_pcb();
 
     Log("Initializing processes...");
@@ -57,6 +61,16 @@ void init_proc() {
 Context* schedule(Context* prev) {
     current->cp = prev;
     // always switch to pcb[0]
-    current = (current == &pcb[0] ? &pcb[1] : &pcb[0]);
+    if (current == &pcb_boot) {
+        current = &pcb[0];
+    } else {
+        for (int i = 0; i < MAX_NR_PROC; i++) {
+            if (current == &pcb[i]) {
+                current = &pcb[(i + 1) % MAX_NR_PROC];
+                break;
+            }
+        }
+    }
+    // current = (current == &pcb[0] ? &pcb[1] : &pcb[0]);
     return current->cp;
 }
