@@ -116,12 +116,22 @@ void cpu_exec(uint64_t n) {
     uint64_t timer_start = get_time();
 
     Decode s;
+    bool has_irq = false;
+    // bool has_irq = true;
     for (; n > 0; n--) {
         fetch_decode_exec_updatepc(&s);
         g_nr_guest_instr++;
         trace_and_difftest(&s, cpu.pc);
         if (nemu_state.state != NEMU_RUNNING) break;
         IFDEF(CONFIG_DEVICE, device_update());
+
+        if (has_irq) {
+            word_t intr = isa_query_intr();
+            // cpu.pc is supposed to be next instruction
+            if (intr != INTR_EMPTY) {
+                cpu.pc = isa_raise_intr(intr, cpu.pc);
+            }
+        }
     }
 
     uint64_t timer_end = get_time();

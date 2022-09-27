@@ -44,7 +44,7 @@ def_EHelper(jalr) {
     rtl_mv(s, ddest, s1);
 
     // Log("jalr. pc = " FMT_WORD ", next = " FMT_WORD, s->pc, s->dnpc);
-    
+
 #ifdef CONFIG_FTRACE
     FuncTraceEvent* event = new_ftrace_event();
     event->type = FTRACE_JMP;
@@ -194,4 +194,5 @@ def_EHelper(mret) {
     word_t epc = csr(CSR_MEPC);
     //    Log("mret pc = " FMT_WORD ", epc = " FMT_WORD, s->pc, epc);
     s->dnpc = epc;
+    enable_intr();
 }
