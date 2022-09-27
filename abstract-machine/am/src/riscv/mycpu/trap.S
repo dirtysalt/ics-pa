@@ -44,6 +44,8 @@ __am_asm_trap:
   csrw mstatus, t1
   csrw mepc, t2
 
+  # TODO(yan): it's very important to make sure
+  # sp won't change during this operation  
   MAP(REGS, POP)
 
   addi sp, sp, CONTEXT_SIZE
