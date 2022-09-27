@@ -9,7 +9,7 @@ void __am_get_cur_as(Context* c);
 Context* __am_irq_handle(Context* c) {
     // c->pdir maybe not intiialized.
     // but we have set initialize satp at `vme_init`
-    // so right here we intialized it, and satp is assured to have kernel map.
+    // so right here we intialized it, and satp is assured to have kernel
 
     // for ctx has been initialized
     // since ctx->pdir == satp
@@ -54,6 +54,8 @@ Context* kcontext(Area kstack, void (*entry)(void*), void* arg) {
     ret->mepc = (uintptr_t)entry;
     // a0 as first argument.
     ret->GPR2 = (uintptr_t)arg;
+    // TODO(yan): no need to allocate stack for kernel context
+    // above this context, that's stack.
     return ret;
 }
 
