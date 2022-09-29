@@ -116,8 +116,8 @@ void cpu_exec(uint64_t n) {
     uint64_t timer_start = get_time();
 
     Decode s;
-    bool has_irq = false;
-    // bool has_irq = true;
+    // bool has_irq = false;
+    bool has_irq = true;
     for (; n > 0; n--) {
         fetch_decode_exec_updatepc(&s);
         g_nr_guest_instr++;

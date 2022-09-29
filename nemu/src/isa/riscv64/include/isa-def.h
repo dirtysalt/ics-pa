@@ -13,6 +13,7 @@
 #define CSR_END_ADDR 0x346
 #define MIE 3
 #define MPIE 7
+// MIE is 0 when initialized.
 #define CSR_MSTATUS_INIT 0xa00001800
 
 #define IRQ_TIMER 0x8000000000000007 // for riscv64
@@ -48,6 +49,10 @@ static inline void disable_intr() {
     // turn off MPIE & MIE
     word_t off = st & (~((1 << MPIE) | (1 << MIE)));
     csr(CSR_MSTATUS) = b | off;
+}
+static inline bool is_intr_enabled() {
+    word_t st = csr(CSR_MSTATUS);
+    return (st >> MIE) & 0x1;
 }
 
 // decode

@@ -51,13 +51,13 @@ static Context* handle_syscall(Event* e, Context* c) {
         int fd = c->GPR2;
         char* buf = (char*)c->GPR3;
         size_t count = c->GPR4;
-        Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);
+        // Log("syscall write. fd = %d, buf = %p, count = %p", fd, buf, count);
         size_t ret = fs_write(fd, buf, count);
         c->GPRx = ret;
 
     } else if (e->cause == SYS_close) {
         int fd = c->GPR2;
-        Log("syscall close. fd = %d", fd);
+        // Log("syscall close. fd = %d", fd);
         c->GPRx = fs_close(fd);
 
     } else if (e->cause == SYS_brk) {
@@ -102,7 +102,7 @@ static Context* handle_syscall(Event* e, Context* c) {
         int fd = c->GPR2;
         size_t offset = c->GPR3;
         int whence = c->GPR4;
-        Log("syscall seek. fd = %d, offset = %p, whence = %p", fd, offset, whence);
+        // Log("syscall seek. fd = %d, offset = %p, whence = %p", fd, offset, whence);
         size_t ret = fs_lseek(fd, offset, whence);
         c->GPRx = ret;
 
@@ -140,6 +140,11 @@ static Context* do_event(Event e, Context* c) {
     case EVENT_SYSCALL: {
         // Log("event syscall. number = %p", e.cause);
         c = handle_syscall(&e, c);
+        break;
+    }
+    case EVENT_IRQ_TIMER: {
+        Log("event irq timer. ready to schedule");
+        c = schedule(c);
         break;
     }
     default:

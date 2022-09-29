@@ -115,11 +115,14 @@ void map(AddrSpace* as, void* va, void* pa, int prot) {
     }
 }
 
+#define MPIE 7
 Context* ucontext(AddrSpace* as, Area kstack, void* entry) {
     char* buf = kstack.end - sizeof(Context);
     Context* ret = (Context*)buf;
     // return from __am_irq_handle
     ret->mepc = (uintptr_t)entry;
+    // enable mpie, so when mret, intr will be enabled.
+    ret->mstatus = (1 << MPIE);
     if (as != NULL) {
         ret->pdir = as->ptr;
     }

@@ -52,7 +52,7 @@ static void load_segment(int fd, Elf_Phdr* header, PCB* pcb) {
     char* vaddr = (char*)header->p_vaddr;
     uint64_t file_size = header->p_filesz;
     uint64_t mem_size = header->p_memsz;
-    Log("load segment. offset = %p, vaddr = %p, file_size = %p, mem_size = %p", offset, vaddr, file_size, mem_size);
+    // Log("load segment. offset = %p, vaddr = %p, file_size = %p, mem_size = %p", offset, vaddr, file_size, mem_size);
     fs_lseek(fd, offset, SEEK_SET);
 
 #ifndef HAS_VME
@@ -72,12 +72,12 @@ static void load_segment(int fd, Elf_Phdr* header, PCB* pcb) {
         memset(paddr, 0, nr_page * PGSIZE);
         for (int i = 0; i < nr_page; i++) {
             int size = i * PGSIZE;
-            Log("map segment. va = %p, pa = %p", va + size, paddr + size);
+            // Log("map segment. va = %p, pa = %p", va + size, paddr + size);
             map(&pcb->as, (void*)(va + size), paddr + size, 0);
         }
         // max_brk is page aligned.
         pcb->max_brk = va + nr_page * PGSIZE;
-        Log("map segment. read to pa = %p, entry = %p", paddr + voff, vaddr);
+        //Log("map segment. read to pa = %p, entry = %p", paddr + voff, vaddr);
         fs_read(fd, paddr + voff, file_size);
     }
 #endif
@@ -204,11 +204,11 @@ void context_uload(PCB* pcb, const char* filename, char* const argv[], char* con
     // a0. looks at riscv64.S, move sp, a0 to initialize stack pointer.
     ctx->GPRx = (uintptr_t)stack;
 
-    {
-        uintptr_t* d = (uintptr_t*)stack;
-        for (int i = 0; i < (argc + 2 + envc + 1); i++) {
-            Log("stack[%d] p = %p, data  = %p", i, d + i, d[i]);
-        }
-    }
+    // {
+    //     uintptr_t* d = (uintptr_t*)stack;
+    //     for (int i = 0; i < (argc + 2 + envc + 1); i++) {
+    //         Log("stack[%d] p = %p, data  = %p", i, d + i, d[i]);
+    //     }
+    // }
     pcb->cp = ctx;
 }

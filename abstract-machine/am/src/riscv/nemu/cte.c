@@ -5,6 +5,7 @@
 static Context* (*user_handler)(Event, Context*) = NULL;
 void __am_switch(Context* c);
 void __am_get_cur_as(Context* c);
+#define IRQ_TIMER 0x8000000000000007 // for riscv64
 
 Context* __am_irq_handle(Context* c) {
     // c->pdir maybe not intiialized.
@@ -25,6 +26,8 @@ Context* __am_irq_handle(Context* c) {
             ev.cause = c->mcause;
         } else if (c->mcause == -1) {
             ev.event = EVENT_YIELD;
+        } else if (c->mcause == IRQ_TIMER) {
+            ev.event = EVENT_IRQ_TIMER;
         } else {
             ev.event = EVENT_ERROR;
         }
@@ -47,6 +50,8 @@ bool cte_init(Context* (*handler)(Event, Context*)) {
     return true;
 }
 
+#define MPIE 7
+
 Context* kcontext(Area kstack, void (*entry)(void*), void* arg) {
     char* buf = kstack.end - sizeof(Context);
     Context* ret = (Context*)buf;
@@ -56,6 +61,8 @@ Context* kcontext(Area kstack, void (*entry)(void*), void* arg) {
     ret->GPR2 = (uintptr_t)arg;
     // TODO(yan): no need to allocate stack for kernel context
     // above this context, that's stack.
+    // when mret, intr will be enabled.
+    ret->mstatus = (1 << MPIE);
     return ret;
 }
 

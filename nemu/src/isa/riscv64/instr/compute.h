@@ -186,6 +186,7 @@ def_EHelper(ecall) {
     word_t no = gpr(17);
     word_t epc = s->snpc;
     //    Log("ecall pc = " FMT_WORD ", no = " FMT_WORD ", epc = " FMT_WORD, s->pc, no, epc);
+    // when syscall, intr will be disabled.
     word_t dnpc = isa_raise_intr(no, epc);
     s->dnpc = dnpc;
 }
@@ -194,5 +195,6 @@ def_EHelper(mret) {
     word_t epc = csr(CSR_MEPC);
     //    Log("mret pc = " FMT_WORD ", epc = " FMT_WORD, s->pc, epc);
     s->dnpc = epc;
+    // when ret, mpie has been set, so intr will be enabled.
     enable_intr();
 }
